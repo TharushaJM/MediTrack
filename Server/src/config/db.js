@@ -1,13 +1,11 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ["patient", "doctor"], default: "patient" }
-  },
-  { timestamps: true }
-);
-
-export default mongoose.model("User", userSchema);
+export const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("✅ MongoDB Connected");
+  } catch (error) {
+    console.error("❌ MongoDB Connection Failed:", error.message);
+    process.exit(1);
+  }
+};
