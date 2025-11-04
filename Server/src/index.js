@@ -18,7 +18,7 @@ app.use("/api/records", recordRoutes);
 
 
 app.get("/", (req, res) => {
-  res.send("MediTrack backend running 🚀");
+  res.send("MediTrack backend running ");
 });
 
 const PORT = process.env.PORT || 5000;
