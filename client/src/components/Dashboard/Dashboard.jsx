@@ -1,3 +1,13 @@
+// Dashboard.jsx
+import PatientDashboard from "./PatientDashboard";
+import DoctorDashboard from "./DoctorDashBoard";
+
 export default function Dashboard() {
-  return <h1 className="text-center mt-10 text-3xl font-bold">Dashboard</h1>;
+  const role = localStorage.getItem("role");
+
+  return (
+    <div className="p-6">
+      {role === "doctor" ? <DoctorDashboard /> : <PatientDashboard />}
+    </div>
+  );
 }
