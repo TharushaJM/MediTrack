@@ -2,35 +2,43 @@ import mongoose from "mongoose";
 
 const recordSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
-    // Daily wellness check-in fields
-    mood: Number,
-    energy: Number,
-    stress: Number,
-    notes: String,
+    // 🧍 Emotional + energy stats
+    mood: { type: Number, min: 1, max: 10 },
+    energy: { type: Number, min: 1, max: 10 },
+    stress: { type: Number, min: 1, max: 10 },
+    notes: { type: String },
 
-    sleepHours: Number,
-    waterIntake: Number,
-    meals: String,
-    exercise: Number,
+    // 🌿 Lifestyle habits
+    sleepHours: { type: Number },
+    waterIntake: { type: Number },
+    meals: { type: String, enum: ["Healthy", "Average", "Skipped"], default: "Average" },
+    exercise: { type: Number }, // minutes per day
 
-    symptoms: String,
-    tookMeds: Boolean,
+    // ⚖️ Physical metrics
+    height: { type: Number }, // cm
+    weight: { type: Number }, // kg
+    bmi: { type: Number },
 
-    // Physical body metrics
-    height: Number, // cm
-    weight: Number, // kg
-    bmi: Number, // computed on backend
+    // 🩺 Health & medication
+    symptoms: { type: String },
+    tookMeds: { type: Boolean, default: false },
+
+    date: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
-// Optional: auto-calculate BMI before save
+// Auto-calculate BMI before save
 recordSchema.pre("save", function (next) {
   if (this.height && this.weight) {
-    const heightInMeters = this.height / 100;
-    this.bmi = Number((this.weight / (heightInMeters * heightInMeters)).toFixed(1));
+    const h = this.height / 100;
+    this.bmi = Number((this.weight / (h * h)).toFixed(1));
   }
   next();
 });

@@ -1,32 +1,25 @@
 import Record from "../models/Record.js";
 
-//  Create new record
 export const createRecord = async (req, res) => {
   try {
-    const record = await Record.create({ userId: req.user.id, ...req.body });
-    res.status(201).json(record);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to create record", error: err.message });
+    const newRecord = new Record({
+      ...req.body,
+      userId: req.user.id,
+    });
+    await newRecord.save();
+    res.status(201).json(newRecord);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to create record" });
   }
 };
 
-//  Get all records for the logged-in user
 export const getRecords = async (req, res) => {
   try {
-    const records = await Record.find({ userId: req.user.id }).sort({ createdAt: -1 });
-    res.json(records);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch records", error: err.message });
-  }
-};
-
-//  Delete a record
-export const deleteRecord = async (req, res) => {
-  try {
-    const record = await Record.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
-    if (!record) return res.status(404).json({ message: "Record not found" });
-    res.json({ message: "Record deleted" });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to delete record", error: err.message });
+    const records = await Record.find({ userId: req.user.id }).sort({ date: -1 });
+    res.status(200).json(records);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch records" });
   }
 };

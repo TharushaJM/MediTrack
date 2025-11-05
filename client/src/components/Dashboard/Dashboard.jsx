@@ -1,6 +1,6 @@
 
-import PatientDashboard from "./PatientDashboard";
-import DoctorDashboard from "./DoctorDashBoard";
+import PatientDashboard from "./Patient/PatientDashboard";
+import DoctorDashboard from "./Doctor/DoctorDashBoard";
 
 export default function Dashboard() {
   const role = localStorage.getItem("role");
