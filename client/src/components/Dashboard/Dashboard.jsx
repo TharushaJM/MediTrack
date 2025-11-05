@@ -1,4 +1,4 @@
-// Dashboard.jsx
+
 import PatientDashboard from "./PatientDashboard";
 import DoctorDashboard from "./DoctorDashBoard";
 

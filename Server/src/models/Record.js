@@ -4,30 +4,35 @@ const recordSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
-    // Basic
-    title: { type: String, required: true },
-    description: String,
-    date: { type: Date, default: Date.now },
-    reportType: { type: String, enum: ["Checkup","Blood Test","Urine Test","X-Ray","ECG","Prescription","Other"], default: "Checkup" },
-    doctorName: String,
-    tags: [String],
+    // Daily wellness check-in fields
+    mood: Number,
+    energy: Number,
+    stress: Number,
+    notes: String,
 
-    // Vitals / Lifestyle (all optional)
-    bpSystolic: Number,
-    bpDiastolic: Number,
-    heartRate: Number,
-    temperature: Number,         // °C or °F (free text in UI)
-    spo2: Number,                 // oxygen %
-    weight: Number,               // kg
-    height: Number,               // cm
-    bmi: Number,                  // we can compute in UI later
-    sleepHours: Number,           // per day
-    waterIntakeLiters: Number,    // per day
-    exercisePerWeek: Number,      // sessions per week
-    mood: Number,                 // 1..10
-    symptoms: String,             // free text
+    sleepHours: Number,
+    waterIntake: Number,
+    meals: String,
+    exercise: Number,
+
+    symptoms: String,
+    tookMeds: Boolean,
+
+    // Physical body metrics
+    height: Number, // cm
+    weight: Number, // kg
+    bmi: Number, // computed on backend
   },
   { timestamps: true }
 );
+
+// Optional: auto-calculate BMI before save
+recordSchema.pre("save", function (next) {
+  if (this.height && this.weight) {
+    const heightInMeters = this.height / 100;
+    this.bmi = Number((this.weight / (heightInMeters * heightInMeters)).toFixed(1));
+  }
+  next();
+});
 
 export default mongoose.model("Record", recordSchema);
