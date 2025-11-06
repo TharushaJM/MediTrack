@@ -5,6 +5,8 @@ import Register from "./components/Register/Register";
 import Dashboard from "./components/Dashboard/Dashboard";
 import Landing from "./components/Landing/Landing";
 import UserProfile from "./components/Profile/UserProfile";
+import UserReports from "./components/Reports/UserReports";
+
 
 
 export default function App() {
@@ -17,6 +19,7 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<UserProfile />} />
+        <Route path="/reports" element={<UserReports />} /> 
       </Routes>
     </BrowserRouter>
   );

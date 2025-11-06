@@ -17,9 +17,12 @@ export default function Navbar() {
 
   async function fetchUser(token) {
     try {
-      const { data } = await axios.get("http://localhost:5000/api/users/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.get(
+        "http://localhost:5000/api/users/profile",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setUser(data);
     } catch (err) {
       console.error("Failed to load user profile:", err);
@@ -84,6 +87,12 @@ export default function Navbar() {
             >
               Profile
             </Link>
+            <Link
+              to="/reports"
+              className="text-gray-300 hover:text-white transition font-medium"
+            >
+              Reports
+            </Link>
 
             {/* Logout Button */}
             <button
@@ -92,6 +101,7 @@ export default function Navbar() {
             >
               Logout
             </button>
+            
           </>
         )}
       </div>
