@@ -4,8 +4,10 @@ import oneImage from "../Landing/landing1.png"; // replace with your image
 
 export default function Landing() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      
+    <div className="min-h-screen flex flex-col ">
+
+
+
 
       {/* HERO SECTION */}
       <section className="flex flex-col md:flex-row items-center justify-between px-8 md:px-20 py-16 md:py-24">
@@ -60,7 +62,7 @@ export default function Landing() {
           transition={{ duration: 1 }}
           src={oneImage}
           alt="Health illustration"
-          className="md:w-1/2 w-full mt-10 md:mt-0 drop-shadow-2xl"
+          className="md:w-1/2 w-full mt-10 md:mt-0 "
         />
       </section>
 

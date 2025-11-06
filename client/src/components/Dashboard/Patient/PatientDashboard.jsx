@@ -206,8 +206,8 @@ function SimpleView({ records, onDelete }) {
 
 function Metric({ label, value, icon }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-blue-600">{icon}</span>
+    <div className="flex items-center gap-20">
+      <span className="text-blue-600 ">{icon}</span>
       <div>
         <div className="font-medium text-gray-800">{label}</div>
         <div className="text-gray-500">{value}</div>
