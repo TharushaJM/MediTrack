@@ -37,7 +37,7 @@ const recordSchema = new mongoose.Schema(
 // Auto-calculate BMI before save
 recordSchema.pre("save", function (next) {
   if (this.height && this.weight) {
-    const h = this.height / 100;
+    const h = this.height / 100; 
     this.bmi = Number((this.weight / (h * h)).toFixed(1));
   }
   next();

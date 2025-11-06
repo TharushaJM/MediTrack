@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import AddRecordForm from "./AddRecordForm"; // ✅ Adjust path if needed
+import AddRecordForm from "./AddRecordForm";
 import WellnessChart from "./WellnessChart";
+import MetricChart from "./MetricChart";
 
 export default function PatientDashboard() {
   const [records, setRecords] = useState([]);
   const [open, setOpen] = useState(false);
+  const [viewMode, setViewMode] = useState("simple");
 
   async function fetchRecords() {
-    const token = localStorage.getItem("token");
-    const { data } = await axios.get("http://localhost:5000/api/records", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    // sort by latest first
-    setRecords(
-      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    );
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await axios.get("http://localhost:5000/api/records", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRecords(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } catch (err) {
+      console.error("Error fetching records", err);
+    }
   }
 
   useEffect(() => {
@@ -23,83 +26,109 @@ export default function PatientDashboard() {
   }, []);
 
   async function handleDelete(id) {
-    const token = localStorage.getItem("token");
-    await axios.delete(`http://localhost:5000/api/records/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setRecords((prev) => prev.filter((r) => r._id !== id));
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:5000/api/records/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRecords((prev) => prev.filter((r) => r._id !== id));
+    } catch (err) {
+      console.error("Error deleting record", err);
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-              Your Health Hub
-            </h1>
-            <p className="text-gray-600">
-              Track symptoms, vitals, and checkups — no files required.
-            </p>
-          </div>
-          <button
-            onClick={() => setOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            + Add record
-          </button>
+      <div className="max-w-6xl mx-auto">
+        {/* Dashboard Header */}
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Your Health Hub</h1>
+          <p className="text-gray-500">
+            Track and monitor your wellness journey
+          </p>
         </header>
 
-        {/* Stats row */}
-        <div className="grid sm:grid-cols-3 gap-4 mb-6">
-          <StatCard label="Total records" value={records.length} color="blue" />
+        {/* Stats Section */}
+        <div className="grid sm:grid-cols-3 gap-6 mb-10">
+          <StatCard label="Total Records" value={records.length} sub="+3 this week" icon="📅" />
           <StatCard
-            label="Last update"
+            label="Last Update"
             value={
               records[0]
-                ? new Date(
-                    records[0].date || records[0].createdAt
-                  ).toLocaleDateString()
+                ? new Date(records[0].date || records[0].createdAt).toLocaleDateString()
                 : "—"
             }
-            color="green"
+            sub={records[0] ? "Updated recently" : ""}
+            icon="📈"
           />
           <StatCard
-            label="This month"
+            label="This Month"
             value={
               records.filter(
                 (r) =>
                   new Date(r.createdAt).getMonth() === new Date().getMonth()
               ).length
             }
-            color="purple"
+            sub="Records logged"
+            icon="📊"
           />
         </div>
 
-        {/* Record grid */}
-        {records.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {records.map((r) => (
-              <RecordCard
-                key={r._id}
-                record={r}
-                onDelete={() => handleDelete(r._id)}
-              />
-            ))}
-          </div>
-        )}
+        {/* Health Records Section */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Health Records
+              </h2>
+              <p className="text-sm text-gray-500">
+                View and manage your health data
+              </p>
+            </div>
 
-        {/* Chart Section */}
-        {records.length > 0 && (
-          <div className="mt-10">
-            <WellnessChart records={records} />
-          </div>
-        )}
+            {/* View toggle and Add button */}
+            <div className="flex items-center gap-3">
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode("simple")}
+                  className={`px-4 py-2 text-sm rounded-md font-medium transition ${
+                    viewMode === "simple"
+                      ? "bg-white shadow text-blue-600"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Simple View
+                </button>
+                <button
+                  onClick={() => setViewMode("chart")}
+                  className={`px-4 py-2 text-sm rounded-md font-medium transition ${
+                    viewMode === "chart"
+                      ? "bg-white shadow text-blue-600"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Graph View
+                </button>
+              </div>
 
-        {/* Add Record Form Modal */}
+              <button
+                onClick={() => setOpen(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg shadow hover:opacity-90 transition"
+              >
+                + Add Record
+              </button>
+            </div>
+          </div>
+
+          {/* View Modes */}
+          {viewMode === "simple" ? (
+            <SimpleView records={records} onDelete={handleDelete} />
+          ) : (
+            <GraphView records={records} />
+          )}
+        </div>
+
+        {/* Add Record Modal */}
         {open && (
           <AddRecordForm
             onClose={() => setOpen(false)}
@@ -118,75 +147,94 @@ export default function PatientDashboard() {
 // Supporting Components
 // ------------------------
 
-function StatCard({ label, value, color }) {
-  const colorMap = {
-    blue: "bg-blue-100 text-blue-700",
-    green: "bg-green-100 text-green-700",
-    purple: "bg-purple-100 text-purple-700",
-  }[color];
+function StatCard({ label, value, sub, icon }) {
   return (
-    <div className={`p-4 rounded-xl ${colorMap}`}>
-      <div className="text-sm opacity-80">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="bg-white border rounded-xl p-8 text-center text-gray-600">
-      No records yet. Click{" "}
-      <span className="font-semibold">“Add record”</span> to create your first
-      entry.
-    </div>
-  );
-}
-
-function RecordCard({ record, onDelete }) {
-  return (
-    <div className="bg-white rounded-xl shadow p-4 border-l-4 border-blue-500">
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
       <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-semibold text-gray-800">{record.title}</h3>
-          <p className="text-sm text-gray-500">
-            {new Date(record.date || record.createdAt).toLocaleDateString()}
-          </p>
+        <span className="text-gray-400 text-xl">{icon}</span>
+        <div className="text-right">
+          <div className="text-sm text-gray-500">{label}</div>
+          <div className="text-2xl font-bold text-gray-800">{value}</div>
+          {sub && <div className="text-xs text-gray-400">{sub}</div>}
         </div>
-        <button
-          onClick={onDelete}
-          className="text-red-600 hover:text-red-700 text-sm"
-        >
-          Delete
-        </button>
-      </div>
-
-      {record.description && (
-        <p className="mt-3 text-gray-700 text-sm">{record.description}</p>
-      )}
-
-      {/* Quick vitals row if present */}
-      <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-gray-600">
-        {record.bpSystolic && record.bpDiastolic && (
-          <div className="bg-gray-100 rounded p-2 text-center">
-            <div className="font-semibold">BP</div>
-            <div>
-              {record.bpSystolic}/{record.bpDiastolic}
-            </div>
-          </div>
-        )}
-        {record.heartRate && (
-          <div className="bg-gray-100 rounded p-2 text-center">
-            <div className="font-semibold">HR</div>
-            <div>{record.heartRate} bpm</div>
-          </div>
-        )}
-        {record.sleepHours && (
-          <div className="bg-gray-100 rounded p-2 text-center">
-            <div className="font-semibold">Sleep</div>
-            <div>{record.sleepHours} h</div>
-          </div>
-        )}
       </div>
     </div>
+  );
+}
+
+function SimpleView({ records, onDelete }) {
+  if (!records.length)
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-10 text-center text-gray-500">
+        No records yet. Click <span className="font-semibold">“Add Record”</span> to create one.
+      </div>
+    );
+
+  return (
+    <div className="space-y-4">
+      {records.map((r, i) => (
+        <div
+          key={r._id || i}
+          className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm hover:shadow-md transition"
+        >
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold text-gray-800">
+              {new Date(r.date || r.createdAt).toLocaleDateString()}
+            </h3>
+            <span className="text-sm text-gray-400">#{i + 1}</span>
+          </div>
+
+          <div className="flex flex-wrap gap-6 text-sm text-gray-700 mb-2">
+            {r.sleepHours && (
+              <Metric label="Sleep" value={`${r.sleepHours}h`} icon="🌙" />
+            )}
+            {r.waterIntake && (
+              <Metric label="Water" value={`${r.waterIntake}L`} icon="💧" />
+            )}
+            {r.mood && <Metric label="Mood" value={`${r.mood}/10`} icon="😊" />}
+            {r.bmi && <Metric label="BMI" value={r.bmi} icon="📈" />}
+          </div>
+
+          {r.notes && (
+            <p className="text-sm italic text-gray-500">{r.notes}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Metric({ label, value, icon }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-blue-600">{icon}</span>
+      <div>
+        <div className="font-medium text-gray-800">{label}</div>
+        <div className="text-gray-500">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function GraphView({ records }) {
+  if (!records.length)
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-10 text-center text-gray-500">
+        Not enough data to display charts.
+      </div>
+    );
+
+  return (
+    <>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <MetricChart title="Mood" data={records} dataKey="mood" color="#6366f1" unit="/10" />
+        <MetricChart title="Sleep" data={records} dataKey="sleepHours" color="#22c55e" unit="hrs" />
+        <MetricChart title="Water Intake" data={records} dataKey="waterIntake" color="#06b6d4" unit="L" />
+        <MetricChart title="BMI" data={records} dataKey="bmi" color="#f59e0b" unit="" />
+      </div>
+      <div className="mt-8">
+        <WellnessChart records={records} />
+      </div>
+    </>
   );
 }
