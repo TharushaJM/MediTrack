@@ -4,6 +4,7 @@ import cors from "cors";
 import { connectDB } from "./config/db.js";
 import userRoutes from  "./routes/userRoutes.js";
 import recordRoutes from "./routes/recordRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -15,7 +16,7 @@ connectDB();
 
 app.use("/api/users", userRoutes);
 app.use("/api/records", recordRoutes);
-
+app.use("/api/reports", reportRoutes);
 
 app.get("/", (req, res) => {
   res.send("MediTrack backend running ");
