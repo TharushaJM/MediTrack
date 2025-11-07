@@ -14,6 +14,7 @@ app.use(express.json());
 
 connectDB();
 
+app.use("/uploads", express.static("uploads"));
 app.use("/api/users", userRoutes);
 app.use("/api/records", recordRoutes);
 app.use("/api/reports", reportRoutes);
