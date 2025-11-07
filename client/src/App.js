@@ -6,6 +6,7 @@ import Dashboard from "./components/Dashboard/Dashboard";
 import Landing from "./components/Landing/Landing";
 import UserProfile from "./components/Profile/UserProfile";
 import UserReports from "./components/Reports/UserReports";
+import { Toaster } from "react-hot-toast";
 
 
 
@@ -13,6 +14,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Navbar />
+      {/* ✅ Global Toaster — visible on all pages */}
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />

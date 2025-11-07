@@ -1,36 +1,59 @@
+import fs from "fs";
+import path from "path";
 import Report from "../models/Report.js";
 
+// Upload a new report
 export const uploadReport = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "User not authenticated" });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ message: "Please upload a file" });
-    }
+    const fileUrl = `uploads/${req.file.filename}`;
 
     const report = await Report.create({
-      user: req.user._id,   // If want userID something hapend
-      title: req.body.title || "Untitled Report",
-      fileUrl: req.file.path, // Multer stores path here
+      user: req.user.id, // ✅ matches schema field name
+      title: req.body.title,
+      fileUrl,
     });
 
-    res.status(201).json({
-      message: "Report uploaded successfully",
-      report,
-    });
+    console.log("✅ Uploaded:", fileUrl);
+    res.status(201).json(report);
   } catch (error) {
-    console.error("Error uploading report:", error);
-    res.status(500).json({ message: "Error uploading report", error: error.message });
+    console.error("❌ Upload error:", error);
+    res.status(500).json({ message: "Error uploading report", error });
   }
 };
 
+// Get reports for the logged-in user
 export const getReports = async (req, res) => {
   try {
-    const reports = await Report.find({ user: req.user._id });
-    res.json(reports);
+    const reports = await Report.find({ user: req.user.id }).sort({
+      createdAt: -1,
+    });
+
+    // ✅ Return array directly (frontend expects reports.map)
+    res.status(200).json(reports);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching reports" });
+    console.error("❌ Fetch reports error:", error);
+    res.status(500).json({ message: "Error fetching reports", error });
+  }
+};
+
+// Delete a report
+export const deleteReport = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ message: "Report not found" });
+
+    if (report.user.toString() !== req.user.id)
+      return res.status(403).json({ message: "Unauthorized" });
+
+    const filePath = path.join(process.cwd(), report.fileUrl);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    await Report.findByIdAndDelete(req.params.id);
+    res.json({ message: "Report deleted successfully" });
+  } catch (error) {
+    console.error("❌ Delete error:", error);
+    res.status(500).json({ message: "Error deleting report", error });
   }
 };
