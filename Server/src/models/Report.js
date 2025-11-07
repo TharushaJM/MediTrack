@@ -7,9 +7,22 @@ const reportSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    title: {
+    type: {
       type: String,
       required: true,
+      enum: [
+        "Blood Test",
+        "X-Ray",
+        "MRI",
+        "Prescription",
+        "ECG",
+        "Ultrasound",
+        "Other",
+      ],
+    },
+    title: {
+      type: String,
+      default: "", // optional, no longer required
     },
     fileUrl: {
       type: String,

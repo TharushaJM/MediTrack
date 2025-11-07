@@ -5,7 +5,8 @@ import toast from "react-hot-toast";
 export default function UserReports() {
   const [reports, setReports] = useState([]);
   const [file, setFile] = useState(null);
-  const [title, setTitle] = useState("");
+  const [reportType, setReportType] = useState("");
+  const [filter, setFilter] = useState("");
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -23,48 +24,45 @@ export default function UserReports() {
   }
 
   async function handleUpload(e) {
-  e.preventDefault();
-  if (!file) return toast.error("Please select a file to upload");
+    e.preventDefault();
+    if (!file) return toast.error("Please select a file to upload");
+    if (!reportType) return toast.error("Please select a report type");
 
-  const token = localStorage.getItem("token");
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("title", title);
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", reportType);
 
-  try {
-    setUploading(true);
-    setProgress(0);
+    try {
+      setUploading(true);
+      setProgress(0);
 
-    const { data } = await axios.post(
-      "http://localhost:5000/api/reports/upload",
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-        onUploadProgress: (p) => {
-          const percent = Math.round((p.loaded * 100) / p.total);
-          setProgress(percent);
-        },
-      }
-    );
+      const { data } = await axios.post(
+        "http://localhost:5000/api/reports/upload",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (p) => {
+            const percent = Math.round((p.loaded * 100) / p.total);
+            setProgress(percent);
+          },
+        }
+      );
 
-    if (data.success) {
-      toast.success(data.message || "Report uploaded successfully!");
+      toast.success("Report uploaded successfully!");
       setFile(null);
-      setTitle("");
+      setReportType("");
       fetchReports();
-    } else {
-      toast.error(data.message || "Upload failed");
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
     }
-  } catch (err) {
-    console.error("Upload error:", err);
-    toast.error("Upload failed. Please try again.");
-  } finally {
-    setUploading(false);
   }
-}
 
   async function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
@@ -85,6 +83,11 @@ export default function UserReports() {
     fetchReports();
   }, []);
 
+  // Apply type filter
+  const filteredReports = filter
+    ? reports.filter((r) => r.type === filter)
+    : reports;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-10 flex justify-center">
       <div className="w-full max-w-5xl px-6">
@@ -101,13 +104,20 @@ export default function UserReports() {
             Upload New Report
           </h2>
 
-          <input
-            type="text"
-            placeholder="Enter report title..."
+          <select
             className="border border-gray-300 p-3 rounded-md w-full mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
+            value={reportType}
+            onChange={(e) => setReportType(e.target.value)}
+          >
+            <option value="">Select Report Type</option>
+            <option value="Blood Test">🩸 Blood Test</option>
+            <option value="X-Ray">🦴 X-Ray</option>
+            <option value="MRI">🧠 MRI</option>
+            <option value="Prescription">💊 Prescription</option>
+            <option value="ECG">❤️ ECG</option>
+            <option value="Ultrasound">🩻 Ultrasound</option>
+            <option value="Other">📄 Other</option>
+          </select>
 
           <div className="flex items-center gap-4">
             <input
@@ -135,19 +145,42 @@ export default function UserReports() {
           )}
         </form>
 
+        {/* Filter Bar */}
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-semibold text-gray-700">
+            Recent Reports
+          </h3>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="border border-gray-300 px-3 py-2 rounded-md text-gray-700"
+          >
+            <option value="">All Types</option>
+            <option value="Blood Test">Blood Test</option>
+            <option value="X-Ray">X-Ray</option>
+            <option value="MRI">MRI</option>
+            <option value="Prescription">Prescription</option>
+            <option value="ECG">ECG</option>
+            <option value="Ultrasound">Ultrasound</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
         {/* Reports List */}
         <div className="grid md:grid-cols-2 gap-6">
-          {reports.map((r) => (
+          {filteredReports.map((r) => (
             <div
               key={r._id}
               className="bg-white p-5 rounded-lg shadow-md hover:shadow-lg border border-gray-100 transition"
             >
-              <h3 className="font-semibold text-lg text-gray-800">
-                {r.title || "Untitled Report"}
-              </h3>
-              <p className="text-gray-500 text-sm mt-1">
-                Uploaded on {new Date(r.createdAt).toLocaleDateString()}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
+                  {r.type}
+                </span>
+                <p className="text-gray-500 text-sm">
+                  {new Date(r.createdAt).toLocaleDateString()}
+                </p>
+              </div>
 
               <div className="mt-4 flex gap-3 flex-wrap">
                 <button
