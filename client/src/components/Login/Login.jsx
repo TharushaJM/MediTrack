@@ -11,19 +11,34 @@ export default function Login() {
   async function handleLogin(e) {
     e.preventDefault();
     setLoading(true);
+
     try {
-      const { data } = await axios.post("http://localhost:5000/api/users/login", { email, password });
+      const { data } = await axios.post("http://localhost:5000/api/users/login", {
+        email,
+        password,
+      });
+
+      // ✅ Save token
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userName", data.user.name);
+
+      // ✅ Save user as object (so DashboardHeader can read name properly)
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          name: data.user.name,
+          email: data.user.email,
+        })
+      );
+
       alert("Login successful!");
       navigate("/dashboard"); // Redirect to dashboard
     } catch (err) {
+      console.error(err);
       alert("Invalid email or password");
     } finally {
       setLoading(false);
     }
   }
-
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
       <div className="bg-white shadow-lg rounded-lg p-8 w-96">

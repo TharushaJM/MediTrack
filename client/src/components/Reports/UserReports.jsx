@@ -1,16 +1,31 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import {
+  Upload,
+  Eye,
+  Download,
+  Trash2,
+  FileText,
+  Image as ImageIcon,
+  Filter,
+} from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
+import { Button } from "../ui/button";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
+import { Progress } from "../ui/progress";
 
 export default function UserReports() {
   const [reports, setReports] = useState([]);
+  const [filteredReports, setFilteredReports] = useState([]);
   const [file, setFile] = useState(null);
   const [reportType, setReportType] = useState("");
-  const [filter, setFilter] = useState("");
+  const [filterType, setFilterType] = useState("All");
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  // Fetch reports
   async function fetchReports() {
     const token = localStorage.getItem("token");
     try {
@@ -18,14 +33,25 @@ export default function UserReports() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setReports(data);
-    } catch (err) {
+      setFilteredReports(data);
+    } catch {
       toast.error("Failed to load reports");
     }
   }
 
+  // Filter reports by category
+  useEffect(() => {
+    if (filterType === "All") {
+      setFilteredReports(reports);
+    } else {
+      setFilteredReports(reports.filter((r) => r.type === filterType));
+    }
+  }, [filterType, reports]);
+
+  // Upload report
   async function handleUpload(e) {
     e.preventDefault();
-    if (!file) return toast.error("Please select a file to upload");
+    if (!file) return toast.error("Please select a file");
     if (!reportType) return toast.error("Please select a report type");
 
     const token = localStorage.getItem("token");
@@ -37,20 +63,16 @@ export default function UserReports() {
       setUploading(true);
       setProgress(0);
 
-      const { data } = await axios.post(
-        "http://localhost:5000/api/reports/upload",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-          onUploadProgress: (p) => {
-            const percent = Math.round((p.loaded * 100) / p.total);
-            setProgress(percent);
-          },
-        }
-      );
+      await axios.post("http://localhost:5000/api/reports/upload", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (p) => {
+          const percent = Math.round((p.loaded * 100) / p.total);
+          setProgress(percent);
+        },
+      });
 
       toast.success("Report uploaded successfully!");
       setFile(null);
@@ -64,10 +86,10 @@ export default function UserReports() {
     }
   }
 
+  // Delete report
   async function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
     const token = localStorage.getItem("token");
-
     try {
       await axios.delete(`http://localhost:5000/api/reports/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -83,165 +105,185 @@ export default function UserReports() {
     fetchReports();
   }, []);
 
-  // Apply type filter
-  const filteredReports = filter
-    ? reports.filter((r) => r.type === filter)
-    : reports;
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-10 flex justify-center">
-      <div className="w-full max-w-5xl px-6">
-        <h1 className="text-4xl font-bold mb-8 text-gray-800 border-b pb-3">
-          My Medical Reports
-        </h1>
+    <div className="p-6 space-y-8 bg-[#f8fafc] min-h-screen">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">Medical Reports</h1>
+        <p className="text-gray-500">Upload and manage your medical documents</p>
+      </div>
 
-        {/* Upload Section */}
-        <form
-          onSubmit={handleUpload}
-          className="bg-white shadow-lg rounded-xl p-6 mb-10 border border-gray-200 hover:shadow-xl transition"
-        >
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-            Upload New Report
-          </h2>
+      {/* Upload Section */}
+      <Card className="border-2 border-dashed border-blue-300 bg-white">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-600">
+            <Upload className="w-5 h-5" /> Upload New Report
+          </CardTitle>
+          <CardDescription>
+            Upload PDF or image files of your medical reports
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleUpload}>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select value={reportType} onValueChange={setReportType}>
+                <SelectTrigger className="sm:w-[200px]">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Blood Test">🩸 Blood Test</SelectItem>
+                  <SelectItem value="X-Ray">🦴 X-Ray</SelectItem>
+                  <SelectItem value="MRI">🧠 MRI</SelectItem>
+                  <SelectItem value="ECG">❤️ ECG</SelectItem>
+                  <SelectItem value="Prescription">💊 Prescription</SelectItem>
+                  <SelectItem value="Other">📄 Other</SelectItem>
+                </SelectContent>
+              </Select>
 
-          <select
-            className="border border-gray-300 p-3 rounded-md w-full mb-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            value={reportType}
-            onChange={(e) => setReportType(e.target.value)}
-          >
-            <option value="">Select Report Type</option>
-            <option value="Blood Test">🩸 Blood Test</option>
-            <option value="X-Ray">🦴 X-Ray</option>
-            <option value="MRI">🧠 MRI</option>
-            <option value="Prescription">💊 Prescription</option>
-            <option value="ECG">❤️ ECG</option>
-            <option value="Ultrasound">🩻 Ultrasound</option>
-            <option value="Other">📄 Other</option>
-          </select>
+              <input
+                type="file"
+                id="file-input"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files[0])}
+              />
+              <Button
+                type="button"
+                onClick={() => document.getElementById("file-input").click()}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                Choose File
+              </Button>
 
-          <div className="flex items-center gap-4">
-            <input
-              type="file"
-              className="file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer hover:file:bg-blue-700 transition"
-              onChange={(e) => setFile(e.target.files[0])}
-            />
-
-            <button
-              type="submit"
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-md hover:opacity-90 transition"
-            >
-              {uploading ? "Uploading..." : "Upload"}
-            </button>
-          </div>
-
-          {/* Progress Bar */}
-          {uploading && (
-            <div className="mt-4 w-full bg-gray-200 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              ></div>
+              <Button
+                type="submit"
+                disabled={uploading}
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+              >
+                {uploading ? "Uploading..." : "Upload"}
+              </Button>
             </div>
-          )}
-        </form>
 
-        {/* Filter Bar */}
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-700">
-            Recent Reports
-          </h3>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="border border-gray-300 px-3 py-2 rounded-md text-gray-700"
-          >
-            <option value="">All Types</option>
-            <option value="Blood Test">Blood Test</option>
-            <option value="X-Ray">X-Ray</option>
-            <option value="MRI">MRI</option>
-            <option value="Prescription">Prescription</option>
-            <option value="ECG">ECG</option>
-            <option value="Ultrasound">Ultrasound</option>
-            <option value="Other">Other</option>
-          </select>
+            {uploading && (
+              <div className="mt-4">
+                <Progress value={progress} className="h-2" />
+              </div>
+            )}
+          </form>
+
+          <div className="flex items-center gap-6 text-sm text-gray-500 pt-2">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span>PDF</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              <span>JPG, PNG</span>
+            </div>
+            <span>Max 10MB</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Reports List */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-lg">All Reports ({filteredReports.length})</h2>
+
+          {/* Filter Dropdown */}
+          <div className="flex items-center gap-2 text-gray-600">
+            <Filter className="w-4 h-4" />
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Filter by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All</SelectItem>
+                <SelectItem value="Blood Test">Blood Test</SelectItem>
+                <SelectItem value="X-Ray">X-Ray</SelectItem>
+                <SelectItem value="MRI">MRI</SelectItem>
+                <SelectItem value="ECG">ECG</SelectItem>
+                <SelectItem value="Prescription">Prescription</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Reports List */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {filteredReports.map((r) => (
-            <div
-              key={r._id}
-              className="bg-white p-5 rounded-lg shadow-md hover:shadow-lg border border-gray-100 transition"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
-                  {r.type}
-                </span>
-                <p className="text-gray-500 text-sm">
-                  {new Date(r.createdAt).toLocaleDateString()}
-                </p>
-              </div>
+        <div className="space-y-3">
+          {filteredReports.length === 0 && (
+            <p className="text-gray-500 text-sm">No reports found for this category.</p>
+          )}
 
-              <div className="mt-4 flex gap-3 flex-wrap">
-                <button
+          {filteredReports.map((r) => (
+            <Card
+              key={r._id}
+              className="p-4 flex items-center justify-between hover:shadow-sm border border-gray-200 transition bg-white"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="text-blue-500" />
+                <div>
+                  <h3 className="font-medium text-gray-800">{r.type}</h3>
+                  <p className="text-sm text-gray-500">
+                    {new Date(r.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="ghost"
                   onClick={() =>
                     setPreviewUrl(`http://localhost:5000/${r.fileUrl}`)
                   }
-                  className="bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 transition"
                 >
-                  Preview
-                </button>
-
-                <a
-                  href={`http://localhost:5000/${r.fileUrl}`}
-                  download
-                  className="border border-blue-600 text-blue-600 px-4 py-1.5 rounded-md hover:bg-blue-50 transition"
-                >
-                  Download
-                </a>
-
-                <button
+                  <Eye className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" asChild>
+                  <a href={`http://localhost:5000/${r.fileUrl}`} download>
+                    <Download className="w-4 h-4" />
+                  </a>
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => handleDelete(r._id)}
-                  className="border border-red-500 text-red-500 px-4 py-1.5 rounded-md hover:bg-red-50 transition"
+                  className="text-red-500 hover:bg-red-50"
                 >
-                  Delete
-                </button>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
-
-        {/* Preview Modal */}
-        {previewUrl && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 animate-fadeIn">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-11/12 md:w-3/4 lg:w-1/2 relative">
-              <button
-                onClick={() => setPreviewUrl(null)}
-                className="absolute top-3 right-4 text-gray-500 hover:text-red-500 text-2xl font-bold"
-              >
-                ✕
-              </button>
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-                Report Preview
-              </h2>
-
-              {previewUrl.toLowerCase().includes(".pdf") ? (
-                <iframe
-                  src={previewUrl}
-                  className="w-full h-[70vh] rounded-md border"
-                  title="PDF Preview"
-                ></iframe>
-              ) : (
-                <img
-                  src={previewUrl}
-                  alt="Report Preview"
-                  className="w-full max-h-[70vh] object-contain rounded-md"
-                />
-              )}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Preview Modal */}
+      {previewUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 shadow-2xl w-11/12 md:w-3/4 lg:w-1/2 relative">
+            <button
+              onClick={() => setPreviewUrl(null)}
+              className="absolute top-3 right-4 text-gray-500 hover:text-red-500 text-xl font-bold"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-semibold mb-4 text-gray-700">
+              Report Preview
+            </h2>
+            {previewUrl.toLowerCase().includes(".pdf") ? (
+              <iframe
+                src={previewUrl}
+                className="w-full h-[70vh] rounded-md border"
+                title="PDF Preview"
+              ></iframe>
+            ) : (
+              <img
+                src={previewUrl}
+                alt="Report Preview"
+                className="w-full max-h-[70vh] object-contain rounded-md"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
