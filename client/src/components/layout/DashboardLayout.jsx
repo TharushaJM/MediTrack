@@ -1,7 +1,6 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate , Link} from "react-router-dom";
 import { LayoutDashboard, FileText, User, LogOut } from "lucide-react";
 import DashboardHeader from "./DashboardHeader";
-
 
 export default function DashboardLayout({ children }) {
   const navigate = useNavigate();
@@ -18,17 +17,31 @@ export default function DashboardLayout({ children }) {
       <aside className="w-60 bg-[#007BCE] text-white flex flex-col justify-between">
         <div>
           {/* Logo */}
-          <div className="flex items-center gap-2 px-4 py-5 border-b border-blue-400">
-            <div className="bg-white text-[#007BCE] w-7 h-7 flex items-center justify-center rounded-full font-bold">
+          <Link
+            to="/"
+            className="flex items-center gap-2 px-4 py-5 border-b border-blue-400 hover:bg-black-50 transition"
+          >
+            <div className="bg-white text-[#007BCE] w-7 h-7 flex items-center justify-center rounded-full font-bold shadow-sm">
               M
             </div>
-            <h1 className="font-semibold text-lg">MediTrack</h1>
-          </div>
+            <h1>
+            <span className="text-white">Medi</span>
+            <span className="text-black">Track</span>
+            </h1>
+          </Link>
 
           {/* Nav Links */}
           <nav className="mt-6 space-y-1">
-            <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text="Dashboard" />
-            <NavItem to="/reports" icon={<FileText size={18} />} text="Reports" />
+            <NavItem
+              to="/dashboard"
+              icon={<LayoutDashboard size={18} />}
+              text="Dashboard"
+            />
+            <NavItem
+              to="/reports"
+              icon={<FileText size={18} />}
+              text="Reports"
+            />
             <NavItem to="/profile" icon={<User size={18} />} text="Profile" />
           </nav>
         </div>
