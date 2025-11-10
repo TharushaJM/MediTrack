@@ -1,239 +1,231 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
+import { Mail, Calendar, Venus } from "lucide-react";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
+  const [form, setForm] = useState({});
   const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [passwords, setPasswords] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  // ✅ Fetch user profile from backend
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await axios.get("http://localhost:5000/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(data);
+      setForm(data); // pre-fill form with live data
+    } catch {
+      toast.error("Failed to load profile");
+    }
+  };
 
   useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const token = localStorage.getItem("token");
-        const { data } = await axios.get("http://localhost:5000/api/users/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(data);
-        setFormData({
-          firstName: data.name?.split(" ")[0] || "",
-          lastName: data.name?.split(" ")[1] || "",
-          email: data.email || "",
-          age: data.age || "",
-          gender: data.gender || "Male",
-          bloodType: data.bloodType || "O+",
-          height: data.height || "",
-          weight: data.weight || "",
-        });
-      } catch (err) {
-        console.error("Error fetching user:", err);
-        toast.error("Failed to load profile");
-      }
-    }
-
     fetchProfile();
   }, []);
 
-  function handleChange(e) {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  }
+  // ✅ Handle live typing
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  async function handleSave() {
-    setLoading(true);
+  // ✅ Save and reflect immediately (no refresh)
+  const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.put("http://localhost:5000/api/users/profile", formData, {
+      const { data } = await axios.put("http://localhost:5000/api/users/profile", form, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      toast.success("Profile updated successfully!");
-      setUser((prev) => ({ ...prev, ...formData }));
-      setEditing(false);
-    } catch (err) {
-      console.error("Error updating profile:", err);
-      toast.error("Failed to update profile");
-    } finally {
-      setLoading(false);
-    }
-  }
 
-  if (!user) {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
-  }
+      toast.success("Profile updated successfully!");
+      setUser(data.user); // update UI immediately
+      setForm(data.user);
+      setEditing(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error updating profile");
+    }
+  };
+
+  // ✅ Password change
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put("http://localhost:5000/api/users/profile", passwords, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast.success("Password changed successfully!");
+      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      toast.error("Incorrect current password or update failed");
+    }
+  };
+
+  if (!user) return <div className="p-10 text-center text-gray-500">Loading...</div>;
 
   return (
-    <div className="p-6 space-y-6 bg-[#f8fafc] min-h-screen">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Profile</h1>
-        <p className="text-gray-500">Manage your personal information</p>
-      </div>
+    <div className="p-6 bg-[#f8fafc] min-h-screen">
+      <h1 className="text-2xl font-bold text-gray-800 mb-2">Profile</h1>
+      <p className="text-gray-500 mb-6">Manage your personal information</p>
 
-      {/* Top Card */}
-      <div className="bg-white rounded-lg shadow p-6 flex items-center justify-between">
+      {/* --- Profile Header --- */}
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center text-xl font-semibold">
-            {user.name?.charAt(0) || "U"}
+          <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl font-bold">
+            {user.firstName?.[0]?.toUpperCase() || "U"}
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">
-              {formData.firstName} {formData.lastName}
-            </h2>
-            <p className="text-gray-500 text-sm">{formData.email}</p>
-            <div className="flex gap-4 text-sm text-gray-500 mt-1">
-              <span>{formData.age || "—"} years</span>
-              <span>•</span>
-              <span>{formData.gender}</span>
+            <h2 className="font-semibold text-lg">{`${user.firstName || ""} ${user.lastName || ""}`}</h2>
+            <p className="text-gray-500 text-sm flex items-center gap-1">
+              <Mail size={14} /> {user.email}
+            </p>
+            <div className="flex gap-4 text-gray-500 text-sm mt-1">
+              <span className="flex items-center gap-1">
+                <Calendar size={14} /> {user.age || "--"} years
+              </span>
+              <span className="flex items-center gap-1">
+                <Venus size={14} /> {user.gender || "--"}
+              </span>
             </div>
           </div>
         </div>
 
-        {!editing ? (
+        {editing ? (
           <button
-            onClick={() => setEditing(true)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+            onClick={handleSave}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
           >
-            Edit Profile
+            Save Changes
           </button>
         ) : (
           <button
-            onClick={handleSave}
-            disabled={loading}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md"
+            onClick={() => setEditing(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >
-            {loading ? "Saving..." : "Save Changes"}
+            Edit Profile
           </button>
         )}
       </div>
 
-      {/* Personal Information */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-700">Personal Information</h3>
-        <p className="text-sm text-gray-500">
-          Your basic details and contact information
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm text-gray-600">First Name</label>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              readOnly={!editing}
-              className={`w-full border rounded p-2 ${
-                editing ? "bg-white" : "bg-gray-100"
-              }`}
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Last Name</label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              readOnly={!editing}
-              className={`w-full border rounded p-2 ${
-                editing ? "bg-white" : "bg-gray-100"
-              }`}
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              readOnly
-              className="w-full border rounded p-2 bg-gray-100"
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Age</label>
-            <input
-              type="number"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-              readOnly={!editing}
-              className={`w-full border rounded p-2 ${
-                editing ? "bg-white" : "bg-gray-100"
-              }`}
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Gender</label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              disabled={!editing}
-              className={`w-full border rounded p-2 ${
-                editing ? "bg-white" : "bg-gray-100"
-              }`}
-            >
-              <option>Male</option>
-              <option>Female</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Blood Type</label>
-            <select
-              name="bloodType"
-              value={formData.bloodType}
-              onChange={handleChange}
-              disabled={!editing}
-              className={`w-full border rounded p-2 ${
-                editing ? "bg-white" : "bg-gray-100"
-              }`}
-            >
-              <option>O+</option>
-              <option>A+</option>
-              <option>B+</option>
-              <option>AB+</option>
-            </select>
-          </div>
+      {/* --- Personal Information --- */}
+      <Card title="Personal Information" subtitle="Your basic details and contact information">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <InputField label="First Name" name="firstName" value={form.firstName} onChange={handleChange} disabled={!editing} />
+          <InputField label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} disabled={!editing} />
+          <InputField label="Email" name="email" value={form.email} onChange={handleChange} disabled />
+          <InputField label="Age" name="age" type="number" value={form.age} onChange={handleChange} disabled={!editing} />
+          <Dropdown label="Gender" name="gender" value={form.gender} options={["Male", "Female", "Other"]} onChange={handleChange} disabled={!editing} />
+          <Dropdown label="Blood Type" name="bloodType" value={form.bloodType} options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]} onChange={handleChange} disabled={!editing} />
         </div>
-      </div>
+      </Card>
 
-      {/* Health Metrics */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-700">Health Metrics</h3>
-        <p className="text-sm text-gray-500">Your physical measurements</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm text-gray-600">Height (cm)</label>
-            <input
-              type="number"
-              name="height"
-              value={formData.height}
-              onChange={handleChange}
-              readOnly={!editing}
-              className={`w-full border rounded p-2 ${
-                editing ? "bg-white" : "bg-gray-100"
-              }`}
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Weight (kg)</label>
-            <input
-              type="number"
-              name="weight"
-              value={formData.weight}
-              onChange={handleChange}
-              readOnly={!editing}
-              className={`w-full border rounded p-2 ${
-                editing ? "bg-white" : "bg-gray-100"
-              }`}
-            />
-          </div>
+      {/* --- Health Metrics --- */}
+      <Card title="Health Metrics" subtitle="Your physical measurements">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <InputField label="Height (cm)" name="height" type="number" value={form.height} onChange={handleChange} disabled={!editing} />
+          <InputField label="Weight (kg)" name="weight" type="number" value={form.weight} onChange={handleChange} disabled={!editing} />
         </div>
-      </div>
+      </Card>
+
+      {/* --- Change Password --- */}
+      <Card title="Change Password" subtitle="Update your account password">
+        <form onSubmit={handlePasswordChange} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <InputField
+            label="Current Password"
+            name="currentPassword"
+            type="password"
+            value={passwords.currentPassword}
+            onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+          />
+          <InputField
+            label="New Password"
+            name="newPassword"
+            type="password"
+            value={passwords.newPassword}
+            onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+          />
+          <InputField
+            label="Confirm New Password"
+            name="confirmPassword"
+            type="password"
+            value={passwords.confirmPassword}
+            onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+          />
+          <div className="col-span-full flex justify-end mt-2">
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+            >
+              Update Password
+            </button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}
+
+// === Reusable Components ===
+function Card({ title, subtitle, children }) {
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+      <h2 className="font-semibold text-lg mb-1">{title}</h2>
+      <p className="text-gray-500 text-sm mb-4">{subtitle}</p>
+      {children}
+    </div>
+  );
+}
+
+function InputField({ label, name, value, onChange, disabled, type = "text" }) {
+  return (
+    <div>
+      <label className="block text-sm text-gray-600 mb-1">{label}</label>
+      <input
+        type={type}
+        name={name}
+        value={value || ""}
+        onChange={onChange}
+        disabled={disabled}
+        className={`w-full border rounded p-2 bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none ${
+          disabled ? "opacity-80" : ""
+        }`}
+      />
+    </div>
+  );
+}
+
+function Dropdown({ label, name, value, onChange, disabled, options }) {
+  return (
+    <div>
+      <label className="block text-sm text-gray-600 mb-1">{label}</label>
+      <select
+        name={name}
+        value={value || ""}
+        onChange={onChange}
+        disabled={disabled}
+        className="w-full border rounded p-2 bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none"
+      >
+        <option value="">Select</option>
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

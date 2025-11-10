@@ -30,7 +30,7 @@ export default function DashboardHeader() {
         <h2 className="text-sm text-gray-600">
           Good morning,{" "}
           <span className="font-semibold text-gray-800">
-            {user ? user.name : "User"}
+            {user ? user.firstName : "User "}
           </span>
         </h2>
         <p className="text-xs text-gray-400">Track your health journey</p>

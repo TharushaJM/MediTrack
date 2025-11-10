@@ -3,7 +3,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Register() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "patient" });
+  const [form, setForm] = useState({ firstName: "",lastName: "", email: "", password: "", role: "patient" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -28,10 +28,18 @@ export default function Register() {
         <form onSubmit={handleRegister} className="flex flex-col gap-4">
           <input
             type="text"
-            placeholder="Full Name"
+            placeholder="First Name"
             className="border p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            value={form.firstNam}
+            onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+            required
+          />
+           <input
+            type="text"
+            placeholder="Last Name"
+            className="border p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none"
+            value={form.lastName}
+            onChange={(e) => setForm({ ...form, lastName: e.target.value })}
             required
           />
           <input

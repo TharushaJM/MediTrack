@@ -1,126 +1,113 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import asyncHandler from "express-async-handler";
 
-// ===========================
-// REGISTER USER
-// ===========================
-export const registerUser = async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
+// ✅ REGISTER USER
+export const registerUser = asyncHandler(async (req, res) => {
+  const { firstName, lastName, email, password, role } = req.body;
 
-    // Check if user exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "Email already exists" });
+  const existingUser = await User.findOne({ email });
+  if (existingUser) return res.status(400).json({ message: "Email already exists" });
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+  // ❌ REMOVE manual hash — the schema handles it
+  const newUser = await User.create({
+    firstName,
+    lastName,
+    email,
+    password, // plain — auto-hash in pre('save')
+    role,
+  });
 
-    // Create user
-    const newUser = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-    });
+  const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
 
-    // Generate token for immediate login
-    const token = jwt.sign(
-      { id: newUser._id, role: newUser.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+  res.status(201).json({
+    message: "User registered successfully",
+    token,
+    user: {
+      id: newUser._id,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email,
+      role: newUser.role,
+    },
+  });
+});
 
-    // Send clean response
-    res.status(201).json({
-      message: "User registered successfully",
-      token,
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-      },
-    });
-  } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).json({ message: "Error registering user", error });
+// ✅ LOGIN USER
+export const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  console.log("📥 Login attempt:", req.body);
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    console.log("❌ No user found for email:", email);
+    return res.status(400).json({ message: "Invalid email or password" });
   }
-};
 
-// ===========================
-// LOGIN USER
-// ===========================
-export const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user)
-      return res.status(400).json({ message: "Invalid email or password" });
-
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid email or password" });
-
-    // Generate token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    // Send user info and token
-    res.status(200).json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error("Error logging in:", error);
-    res.status(500).json({ message: "Error logging in", error });
+  const isMatch = await user.matchPassword(password);
+  if (!isMatch) {
+    console.log("❌ Password mismatch for:", email);
+    return res.status(400).json({ message: "Invalid email or password" });
   }
-};
 
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
 
-// ✅ Get logged-in user's profile
-export const getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching profile", error });
+  console.log("✅ Login success for:", user.email);
+
+  res.status(200).json({
+    token,
+    user: {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+    },
+  });
+});
+
+// ✅ GET PROFILE
+export const getProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id).select("-password");
+  if (!user) return res.status(404).json({ message: "User not found" });
+  res.json(user);
+});
+
+// ✅ UPDATE PROFILE (with password change)
+export const updateProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
   }
-};
 
-// ✅ Update user's profile
-export const updateProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+  user.firstName = req.body.firstName || user.firstName;
+  user.lastName = req.body.lastName || user.lastName;
+  user.email = req.body.email || user.email;
+  user.age = req.body.age ?? user.age;
+  user.gender = req.body.gender || user.gender;
+  user.bloodType = req.body.bloodType || user.bloodType;
+  user.height = req.body.height ?? user.height;
+  user.weight = req.body.weight ?? user.weight;
 
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-    if (req.body.password) {
-      user.password = await bcrypt.hash(req.body.password, 10);
+  // ✅ Change password safely
+  if (req.body.currentPassword && req.body.newPassword) {
+    const isMatch = await user.matchPassword(req.body.currentPassword);
+    if (!isMatch) {
+      res.status(400);
+      throw new Error("Current password is incorrect");
     }
-
-    const updatedUser = await user.save();
-    res.json({
-      id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      role: updatedUser.role,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error updating profile", error });
+    user.password = req.body.newPassword; // auto-hash by pre('save')
   }
-};
+
+  const updatedUser = await user.save();
+  res.json({
+    message: "Profile updated successfully",
+    user: updatedUser,
+  });
+});
