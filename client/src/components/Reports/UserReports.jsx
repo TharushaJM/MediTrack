@@ -10,10 +10,21 @@ import {
   Image as ImageIcon,
   Filter,
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "../ui/card";
 import { Button } from "../ui/button";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
-import { Progress } from "../ui/progress";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "../ui/select";
 
 export default function UserReports() {
   const [reports, setReports] = useState([]);
@@ -25,7 +36,7 @@ export default function UserReports() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // Fetch reports
+  // ✅ Fetch reports from backend
   async function fetchReports() {
     const token = localStorage.getItem("token");
     try {
@@ -34,25 +45,29 @@ export default function UserReports() {
       });
       setReports(data);
       setFilteredReports(data);
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error("Failed to load reports");
     }
   }
 
-  // Filter reports by category
   useEffect(() => {
-    if (filterType === "All") {
-      setFilteredReports(reports);
-    } else {
-      setFilteredReports(reports.filter((r) => r.type === filterType));
-    }
+    fetchReports();
+  }, []);
+
+  // ✅ Filter by report type
+  useEffect(() => {
+    if (filterType === "All") setFilteredReports(reports);
+    else setFilteredReports(reports.filter((r) => r.type === filterType));
   }, [filterType, reports]);
 
-  // Upload report
+  // ✅ Upload new report
   async function handleUpload(e) {
     e.preventDefault();
     if (!file) return toast.error("Please select a file");
     if (!reportType) return toast.error("Please select a report type");
+    if (file.size > 10 * 1024 * 1024)
+      return toast.error("File too large (max 10MB)");
 
     const token = localStorage.getItem("token");
     const formData = new FormData();
@@ -77,16 +92,18 @@ export default function UserReports() {
       toast.success("Report uploaded successfully!");
       setFile(null);
       setReportType("");
+      await new Promise((r) => setTimeout(r, 400));
       fetchReports();
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
+      setProgress(0);
     }
   }
 
-  // Delete report
+  // ✅ Delete report
   async function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this report?")) return;
     const token = localStorage.getItem("token");
@@ -101,8 +118,11 @@ export default function UserReports() {
     }
   }
 
+  // ✅ ESC key to close modal
   useEffect(() => {
-    fetchReports();
+    const handleEsc = (e) => e.key === "Escape" && setPreviewUrl(null);
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
   return (
@@ -110,7 +130,9 @@ export default function UserReports() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Medical Reports</h1>
-        <p className="text-gray-500">Upload and manage your medical documents</p>
+        <p className="text-gray-500">
+          Upload and manage your medical documents
+        </p>
       </div>
 
       {/* Upload Section */}
@@ -123,53 +145,123 @@ export default function UserReports() {
             Upload PDF or image files of your medical reports
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={handleUpload}>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger className="sm:w-[200px]">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Blood Test">🩸 Blood Test</SelectItem>
-                  <SelectItem value="X-Ray">🦴 X-Ray</SelectItem>
-                  <SelectItem value="MRI">🧠 MRI</SelectItem>
-                  <SelectItem value="ECG">❤️ ECG</SelectItem>
-                  <SelectItem value="Prescription">💊 Prescription</SelectItem>
-                  <SelectItem value="Other">📄 Other</SelectItem>
-                </SelectContent>
-              </Select>
 
+        <CardContent className="space-y-4">
+          <form onSubmit={handleUpload} className="space-y-3 w-full">
+            <div className="flex items-center gap-3 w-full">
+              {/* Category Select */}
+              <div className="relative">
+                <Select value={reportType} onValueChange={setReportType}>
+                  <SelectTrigger className="!w-[130px] h-[44px] text-sm border-gray-300 rounded-md focus:ring-0 focus:outline-none">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  {/* ⛔ Force dropdown to match trigger width */}
+                  <SelectContent className="!w-[130px]">
+                    <SelectItem value="Blood Test">🩸 Blood Test</SelectItem>
+                    <SelectItem value="X-Ray">🦴 X-Ray</SelectItem>
+                    <SelectItem value="MRI">🧠 MRI</SelectItem>
+                    <SelectItem value="ECG">❤️ ECG</SelectItem>
+                    <SelectItem value="Prescription">
+                      💊 Prescription
+                    </SelectItem>
+                    <SelectItem value="Other">📄 Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Hidden File Input */}
               <input
                 type="file"
                 id="file-input"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files[0])}
+                onChange={(e) => {
+                  const selectedFile = e.target.files[0];
+                  if (!reportType) {
+                    toast.error("Please select a category first");
+                    e.target.value = "";
+                    return;
+                  }
+                  if (selectedFile) setFile(selectedFile);
+                }}
               />
-              <Button
-                type="button"
-                onClick={() => document.getElementById("file-input").click()}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                Choose File
-              </Button>
 
-              <Button
-                type="submit"
+              {/* Dynamic Single Button */}
+              <button
+                type={file ? "submit" : "button"}
+                onClick={() => {
+                  if (!file) {
+                    if (!reportType)
+                      return toast.error("Select a category first!");
+                    document.getElementById("file-input").click();
+                  }
+                }}
                 disabled={uploading}
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+                className={`flex-1 h-[44px] flex items-center justify-center gap-2 rounded-md font-medium text-white transition-all duration-200 shadow-sm
+        ${
+          uploading
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600"
+        }
+      `}
               >
-                {uploading ? "Uploading..." : "Upload"}
-              </Button>
+                {uploading ? (
+                  <>
+                    <svg
+                      className="animate-spin w-4 h-4 mr-1 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
+                    </svg>
+                    Uploading...
+                  </>
+                ) : file ? (
+                  <>
+                    <Upload className="w-4 h-4" /> Upload
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" /> Choose File
+                  </>
+                )}
+              </button>
             </div>
 
+            {/* File Info */}
+            {file && !uploading && (
+              <div className="flex items-center justify-between text-sm bg-sky-50 text-sky-700 px-3 py-2 rounded-md animate-fadeIn">
+                <span className="truncate">{file.name}</span>
+                <span className="text-xs text-sky-500">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </span>
+              </div>
+            )}
+
+            {/* Progress Bar */}
             {uploading && (
-              <div className="mt-4">
-                <Progress value={progress} className="h-2" />
+              <div className="relative w-full h-2 bg-sky-100 rounded-md overflow-hidden mt-2">
+                <div
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-sky-400 to-sky-600 transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                ></div>
               </div>
             )}
           </form>
 
+          {/* File type info */}
           <div className="flex items-center gap-6 text-sm text-gray-500 pt-2">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -187,9 +279,10 @@ export default function UserReports() {
       {/* Reports List */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-lg">All Reports ({filteredReports.length})</h2>
+          <h2 className="font-semibold text-lg">
+            All Reports ({filteredReports.length})
+          </h2>
 
-          {/* Filter Dropdown */}
           <div className="flex items-center gap-2 text-gray-600">
             <Filter className="w-4 h-4" />
             <Select value={filterType} onValueChange={setFilterType}>
@@ -209,14 +302,17 @@ export default function UserReports() {
           </div>
         </div>
 
+        {/* Report Cards */}
         <div className="space-y-3">
           {filteredReports.length === 0 && (
-            <p className="text-gray-500 text-sm">No reports found for this category.</p>
+            <p className="text-gray-500 text-sm">
+              No reports found for this category.
+            </p>
           )}
 
           {filteredReports.map((r) => (
             <Card
-              key={r._id}
+              key={r._id || r.fileUrl}
               className="p-4 flex items-center justify-between hover:shadow-sm border border-gray-200 transition bg-white"
             >
               <div className="flex items-center gap-3">
