@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
-import { User, Mail, UserCircle, Edit2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -17,120 +16,224 @@ export default function UserProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(data);
-        setForm({ name: data.name, email: data.email, password: "" });
+        setFormData({
+          firstName: data.name?.split(" ")[0] || "",
+          lastName: data.name?.split(" ")[1] || "",
+          email: data.email || "",
+          age: data.age || "",
+          gender: data.gender || "Male",
+          bloodType: data.bloodType || "O+",
+          height: data.height || "",
+          weight: data.weight || "",
+        });
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching user:", err);
+        toast.error("Failed to load profile");
       }
     }
+
     fetchProfile();
   }, []);
 
-  async function handleUpdate(e) {
-    e.preventDefault();
+  function handleChange(e) {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  }
+
+  async function handleSave() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.put("http://localhost:5000/api/users/profile", form, {
+      await axios.put("http://localhost:5000/api/users/profile", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully!");
+      setUser((prev) => ({ ...prev, ...formData }));
       setEditing(false);
     } catch (err) {
-      alert("Error updating profile");
+      console.error("Error updating profile:", err);
+      toast.error("Failed to update profile");
     } finally {
       setLoading(false);
     }
   }
 
-  if (!user) return <div className="p-10 text-center">Loading profile...</div>;
+  if (!user) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f8faff] to-[#eef3ff] flex justify-center items-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-white shadow-xl rounded-2xl w-full max-w-lg p-8 relative border border-gray-100"
-      >
-        {/* Decorative Top Accent */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-2xl"></div>
+    <div className="p-6 space-y-6 bg-[#f8fafc] min-h-screen">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">Profile</h1>
+        <p className="text-gray-500">Manage your personal information</p>
+      </div>
 
-        <div className="flex flex-col items-center text-center mb-6">
-          <UserCircle className="text-blue-600 w-16 h-16 mb-3" />
-          <h2 className="text-2xl font-bold text-gray-800">Your Profile</h2>
-          <p className="text-gray-500 text-sm">
-            Manage your personal details securely
-          </p>
+      {/* Top Card */}
+      <div className="bg-white rounded-lg shadow p-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center text-xl font-semibold">
+            {user.name?.charAt(0) || "U"}
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">
+              {formData.firstName} {formData.lastName}
+            </h2>
+            <p className="text-gray-500 text-sm">{formData.email}</p>
+            <div className="flex gap-4 text-sm text-gray-500 mt-1">
+              <span>{formData.age || "—"} years</span>
+              <span>•</span>
+              <span>{formData.gender}</span>
+            </div>
+          </div>
         </div>
 
         {!editing ? (
-          <div className="space-y-4">
-            <ProfileItem icon={<User />} label="Name" value={user.name} />
-            <ProfileItem icon={<Mail />} label="Email" value={user.email} />
-            <ProfileItem icon={<User />} label="Role" value={user.role} />
-
-            <button
-              onClick={() => setEditing(true)}
-              className="mt-4 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition"
-            >
-              <Edit2 size={16} /> Edit Profile
-            </button>
-          </div>
+          <button
+            onClick={() => setEditing(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+          >
+            Edit Profile
+          </button>
         ) : (
-          <form onSubmit={handleUpdate} className="space-y-4">
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md"
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+        )}
+      </div>
+
+      {/* Personal Information */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-700">Personal Information</h3>
+        <p className="text-sm text-gray-500">
+          Your basic details and contact information
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm text-gray-600">First Name</label>
             <input
               type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Name"
-              className="border border-gray-300 w-full p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              readOnly={!editing}
+              className={`w-full border rounded p-2 ${
+                editing ? "bg-white" : "bg-gray-100"
+              }`}
             />
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">Last Name</label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              readOnly={!editing}
+              className={`w-full border rounded p-2 ${
+                editing ? "bg-white" : "bg-gray-100"
+              }`}
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">Email</label>
             <input
               type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="Email"
-              className="border border-gray-300 w-full p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              readOnly
+              className="w-full border rounded p-2 bg-gray-100"
             />
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">Age</label>
             <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="New Password (optional)"
-              className="border border-gray-300 w-full p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none"
+              type="number"
+              name="age"
+              value={formData.age}
+              onChange={handleChange}
+              readOnly={!editing}
+              className={`w-full border rounded p-2 ${
+                editing ? "bg-white" : "bg-gray-100"
+              }`}
             />
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="submit"
-                className="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"
-                disabled={loading}
-              >
-                {loading ? "Saving..." : "Save Changes"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditing(false)}
-                className="flex-1 border border-gray-400 text-gray-600 py-2 rounded hover:bg-gray-50 transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
-      </motion.div>
-    </div>
-  );
-}
-
-function ProfileItem({ icon, label, value }) {
-  return (
-    <div className="flex items-center justify-between border-b pb-2">
-      <div className="flex items-center gap-2 text-gray-600">
-        <span className="text-blue-500">{icon}</span>
-        <span className="font-medium">{label}:</span>
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">Gender</label>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              disabled={!editing}
+              className={`w-full border rounded p-2 ${
+                editing ? "bg-white" : "bg-gray-100"
+              }`}
+            >
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">Blood Type</label>
+            <select
+              name="bloodType"
+              value={formData.bloodType}
+              onChange={handleChange}
+              disabled={!editing}
+              className={`w-full border rounded p-2 ${
+                editing ? "bg-white" : "bg-gray-100"
+              }`}
+            >
+              <option>O+</option>
+              <option>A+</option>
+              <option>B+</option>
+              <option>AB+</option>
+            </select>
+          </div>
+        </div>
       </div>
-      <span className="text-gray-800 font-semibold">{value}</span>
+
+      {/* Health Metrics */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-700">Health Metrics</h3>
+        <p className="text-sm text-gray-500">Your physical measurements</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm text-gray-600">Height (cm)</label>
+            <input
+              type="number"
+              name="height"
+              value={formData.height}
+              onChange={handleChange}
+              readOnly={!editing}
+              className={`w-full border rounded p-2 ${
+                editing ? "bg-white" : "bg-gray-100"
+              }`}
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">Weight (kg)</label>
+            <input
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleChange}
+              readOnly={!editing}
+              className={`w-full border rounded p-2 ${
+                editing ? "bg-white" : "bg-gray-100"
+              }`}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
