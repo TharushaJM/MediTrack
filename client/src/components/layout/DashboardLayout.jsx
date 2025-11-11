@@ -2,6 +2,7 @@ import { NavLink, useNavigate , Link} from "react-router-dom";
 import { LayoutDashboard, FileText, User, LogOut } from "lucide-react";
 import DashboardHeader from "./DashboardHeader";
 
+
 export default function DashboardLayout({ children }) {
   const navigate = useNavigate();
 
@@ -37,11 +38,17 @@ export default function DashboardLayout({ children }) {
               icon={<LayoutDashboard size={18} />}
               text="Dashboard"
             />
+            
             <NavItem
               to="/reports"
               icon={<FileText size={18} />}
               text="Reports"
             />
+            <NavItem
+              to="/assistant"
+              icon={<FileText size={18} />}
+              text="AI Helth"
+              />
             <NavItem to="/profile" icon={<User size={18} />} text="Profile" />
           </nav>
         </div>

@@ -8,13 +8,14 @@ import Dashboard from "./components/Dashboard/Dashboard";
 import UserReports from "./components/Reports/UserReports";
 import UserProfile from "./components/Profile/UserProfile";
 import DashboardLayout from "./components/layout/DashboardLayout";
+import HealthAssistant from "./components/AI/HealthAssistant";
 
-// ✅ This wrapper helps control where Navbar appears
+//  This wrapper helps control where Navbar appears
 function LayoutWrapper({ children }) {
   const location = useLocation();
 
   // Hide navbar on these routes
-  const hideNavbarRoutes = ["/dashboard", "/reports", "/profile"];
+  const hideNavbarRoutes = ["/dashboard", "/reports", "/profile", "/assistant"];
 
   const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
 
@@ -53,6 +54,14 @@ export default function App() {
                 <UserReports />
               </DashboardLayout>
             }
+          />
+          <Route 
+          path="/assistant" 
+          element={
+            <DashboardLayout>
+          <HealthAssistant />
+          </DashboardLayout>           
+          }
           />
           <Route
             path="/profile"
