@@ -23,3 +23,16 @@ export const getRecords = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch records" });
   }
 };
+
+export const deleteRecord = async (req, res) => {
+  try {
+    const record = await Record.findById(req.params.id);
+    if (!record) return res.status(404).json({ message: "Record not found" });
+
+    await record.deleteOne();
+    res.json({ message: "Record deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

@@ -1,5 +1,16 @@
 import { useState } from "react";
 import axios from "axios";
+import {
+  Moon,
+  Droplets,
+  Activity,
+  Ruler,
+  Weight,
+  Heart,
+  ClipboardList,
+  Brain,
+  Pill,
+} from "lucide-react";
 
 export default function AddRecordForm({ onClose, onCreated }) {
   const [form, setForm] = useState({
@@ -19,27 +30,24 @@ export default function AddRecordForm({ onClose, onCreated }) {
   });
   const [saving, setSaving] = useState(false);
 
-  function update(k, v) {
-    setForm((prev) => ({ ...prev, [k]: v }));
-  }
+  const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  // compute BMI live
-  function calcBMI() {
+  const calcBMI = () => {
     if (!form.height || !form.weight) return null;
     const bmi = form.weight / ((form.height / 100) ** 2);
     return bmi.toFixed(1);
-  }
+  };
 
-  function getBMICategory(bmi) {
+  const getBMICategory = (bmi) => {
     if (!bmi) return "";
     const val = parseFloat(bmi);
     if (val < 18.5) return "Underweight";
     if (val < 25) return "Normal";
     if (val < 30) return "Overweight";
     return "Obese";
-  }
+  };
 
-  async function submit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
@@ -50,103 +58,115 @@ export default function AddRecordForm({ onClose, onCreated }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       onCreated(data);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to save record");
+      onClose();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save record. Try again.");
+    } finally {
       setSaving(false);
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">🩺 Daily Wellness Check-in</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b bg-gradient-to-r from-blue-50 to-purple-50">
+          <div className="flex items-center gap-2 text-blue-700 font-semibold">
+            <ClipboardList className="w-5 h-5" />
+            <span>Daily Wellness Check-In</span>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-xl"
+            className="text-gray-500 hover:text-gray-700 text-lg"
           >
             ✕
           </button>
         </div>
 
-        <form onSubmit={submit} className="p-4 space-y-6">
-          {/* Section 1: How do you feel */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-8">
+          {/* SECTION 1: Mood & Wellbeing */}
           <section>
-            <h3 className="text-md font-semibold text-gray-700 mb-2">
-              🧍 How do you feel today?
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-blue-600" />
+              How do you feel today?
             </h3>
 
-            <label className="block mb-1 text-sm">Mood</label>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              className="w-full accent-blue-600"
-              value={form.mood}
-              onChange={(e) => update("mood", Number(e.target.value))}
-            />
-            <p className="text-gray-600 text-sm text-right">
-              {form.mood}/10
-            </p>
-
-            <div className="grid grid-cols-2 gap-3 mt-4">
+            <div className="space-y-3">
               <div>
-                <label className="block text-sm mb-1">Energy</label>
+                <label className="block text-sm font-medium text-gray-600">
+                  Mood ({form.mood}/10)
+                </label>
                 <input
                   type="range"
                   min="1"
                   max="10"
-                  className="w-full accent-green-600"
-                  value={form.energy}
-                  onChange={(e) => update("energy", Number(e.target.value))}
+                  value={form.mood}
+                  onChange={(e) => update("mood", Number(e.target.value))}
+                  className="w-full accent-blue-600"
                 />
-                <p className="text-sm text-right">{form.energy}/10</p>
               </div>
 
-              <div>
-                <label className="block text-sm mb-1">Stress</label>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  className="w-full accent-red-500"
-                  value={form.stress}
-                  onChange={(e) => update("stress", Number(e.target.value))}
-                />
-                <p className="text-sm text-right">{form.stress}/10</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    Energy ({form.energy}/10)
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={form.energy}
+                    onChange={(e) => update("energy", Number(e.target.value))}
+                    className="w-full accent-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600">
+                    Stress ({form.stress}/10)
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={form.stress}
+                    onChange={(e) => update("stress", Number(e.target.value))}
+                    className="w-full accent-red-500"
+                  />
+                </div>
               </div>
+
+              <textarea
+                className="border rounded-xl w-full p-3 mt-2 text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none"
+                rows="3"
+                placeholder="Any thoughts, notes or symptoms today..."
+                value={form.notes}
+                onChange={(e) => update("notes", e.target.value)}
+              />
             </div>
-
-            <textarea
-              className="border rounded-lg p-2 w-full mt-3"
-              placeholder="Any notes or thoughts for today..."
-              rows={3}
-              value={form.notes}
-              onChange={(e) => update("notes", e.target.value)}
-            />
           </section>
 
-          {/* Section 2: Daily habits */}
+          {/* SECTION 2: Daily Habits */}
           <section>
-            <h3 className="text-md font-semibold text-gray-700 mb-2">
-              🌿 Your daily habits
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-green-600" />
+              Daily Habits
             </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                className="border rounded-lg p-2"
+            <div className="grid sm:grid-cols-2 gap-4">
+              <HabitInput
+                icon={<Moon className="w-4 h-4 text-blue-500" />}
                 placeholder="Sleep (hrs)"
                 value={form.sleepHours}
                 onChange={(e) => update("sleepHours", e.target.value)}
               />
-              <input
-                className="border rounded-lg p-2"
+              <HabitInput
+                icon={<Droplets className="w-4 h-4 text-cyan-500" />}
                 placeholder="Water intake (L)"
                 value={form.waterIntake}
                 onChange={(e) => update("waterIntake", e.target.value)}
               />
               <select
-                className="border rounded-lg p-2"
+                className="border rounded-lg p-3 text-gray-700 focus:ring-2 focus:ring-purple-400"
                 value={form.meals}
                 onChange={(e) => update("meals", e.target.value)}
               >
@@ -154,8 +174,8 @@ export default function AddRecordForm({ onClose, onCreated }) {
                 <option>Average</option>
                 <option>Skipped</option>
               </select>
-              <input
-                className="border rounded-lg p-2"
+              <HabitInput
+                icon={<Activity className="w-4 h-4 text-purple-500" />}
                 placeholder="Exercise (min)"
                 value={form.exercise}
                 onChange={(e) => update("exercise", e.target.value)}
@@ -163,27 +183,28 @@ export default function AddRecordForm({ onClose, onCreated }) {
             </div>
           </section>
 
-          {/* Section 3: Physical metrics */}
+          {/* SECTION 3: Physical Stats */}
           <section>
-            <h3 className="text-md font-semibold text-gray-700 mb-2">
-              ⚖️ Your Body Stats
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Heart className="w-5 h-5 text-pink-500" />
+              Body Stats
             </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                className="border rounded-lg p-2"
+            <div className="grid sm:grid-cols-2 gap-4">
+              <HabitInput
+                icon={<Ruler className="w-4 h-4 text-pink-500" />}
                 placeholder="Height (cm)"
                 value={form.height}
                 onChange={(e) => update("height", e.target.value)}
               />
-              <input
-                className="border rounded-lg p-2"
+              <HabitInput
+                icon={<Weight className="w-4 h-4 text-amber-500" />}
                 placeholder="Weight (kg)"
                 value={form.weight}
                 onChange={(e) => update("weight", e.target.value)}
               />
             </div>
             {form.height && form.weight && (
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="mt-3 text-sm text-gray-600">
                 BMI:{" "}
                 <span className="font-semibold text-blue-600">
                   {calcBMI()}
@@ -193,19 +214,20 @@ export default function AddRecordForm({ onClose, onCreated }) {
             )}
           </section>
 
-          {/* Section 4: Symptoms */}
+          {/* SECTION 4: Symptoms */}
           <section>
-            <h3 className="text-md font-semibold text-gray-700 mb-2">
-              🩺 Any symptoms today?
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Pill className="w-5 h-5 text-indigo-600" />
+              Any symptoms today?
             </h3>
             <textarea
-              className="border rounded-lg p-2 w-full"
+              className="border rounded-xl w-full p-3 text-gray-700 focus:ring-2 focus:ring-indigo-400 outline-none"
+              rows="2"
               placeholder="E.g. headache, fatigue, mild cough..."
-              rows={2}
               value={form.symptoms}
               onChange={(e) => update("symptoms", e.target.value)}
             />
-            <label className="flex items-center mt-2 gap-2 text-sm text-gray-700">
+            <label className="flex items-center mt-3 gap-2 text-sm text-gray-700">
               <input
                 type="checkbox"
                 checked={form.tookMeds}
@@ -215,25 +237,40 @@ export default function AddRecordForm({ onClose, onCreated }) {
             </label>
           </section>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 mt-4">
+          {/* SUBMIT BUTTON */}
+          <div className="flex justify-end gap-3 border-t pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded border"
+              className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              className="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:opacity-90 transition"
             >
               {saving ? "Saving..." : "Save Check-in"}
             </button>
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+function HabitInput({ icon, placeholder, value, onChange }) {
+  return (
+    <div className="flex items-center gap-2 border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-400 transition">
+      {icon}
+      <input
+        type="text"
+        className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-400"
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+      />
     </div>
   );
 }

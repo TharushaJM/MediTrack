@@ -6,6 +6,7 @@ import userRoutes from "./routes/userRoutes.js";
 import recordRoutes from "./routes/recordRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 
+
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -26,6 +27,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/users", userRoutes);
 app.use("/api/records", recordRoutes);
 app.use("/api/reports", reportRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("MediTrack backend running");
