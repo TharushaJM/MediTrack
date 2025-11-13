@@ -6,6 +6,8 @@ import userRoutes from "./routes/userRoutes.js";
 import recordRoutes from "./routes/recordRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import "./cron/reminderCron.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -28,6 +30,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/records", recordRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/reminders", reminderRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 
 app.get("/", (req, res) => {

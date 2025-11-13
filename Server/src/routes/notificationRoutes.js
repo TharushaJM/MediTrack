@@ -42,5 +42,36 @@ router.get("/unread/count", protect, async (req, res) => {
 
   res.json({ count });
 });
+// GET unread notification count
+router.get("/unread-count", protect, async (req, res) => {
+  try {
+    const count = await Notification.countDocuments({
+      user: req.user._id,
+      read: false,
+    });
+    res.json({ count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to get count" });
+  }
+});
+
+// Mark all unread notifications for the user as read
+router.put("/read-all", protect, async (req, res) => {
+  try {
+    const result = await Notification.updateMany(
+      { user: req.user._id, read: false },
+      { $set: { read: true } }
+    );
+
+    // result may vary by mongoose version
+    const modified = result.modifiedCount ?? result.nModified ?? 0;
+    res.json({ message: "Marked all as read", modifiedCount: modified });
+  } catch (err) {
+    console.error("Error marking all read:", err);
+    res.status(500).json({ message: "Failed to mark all read" });
+  }
+});
+
 
 export default router;
