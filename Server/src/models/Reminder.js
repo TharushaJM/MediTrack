@@ -8,6 +8,13 @@ const reminderSchema = new mongoose.Schema({
   frequency: { type: String, default: "Once Daily" },
   notes: { type: String },
   createdAt: { type: Date, default: Date.now },
+    takenDates: [
+    {
+      date: String,
+      taken: Boolean,
+      _id: false
+    }
+  ]
 });
 
 export default mongoose.model("Reminder", reminderSchema);

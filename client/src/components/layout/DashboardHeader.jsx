@@ -4,6 +4,7 @@ import { Bell, User } from "lucide-react";
 
 export default function DashboardHeader() {
   const [user, setUser] = useState(null);
+  const [greeting, setGreeting] = useState("Good morning");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -23,12 +24,27 @@ export default function DashboardHeader() {
     }
   }
 
+  function computeGreeting(now = new Date()) {
+    const hour = now.getHours();
+    if (hour >= 5 && hour < 12) return "Good morning";
+    if (hour >= 12 && hour < 17) return "Good afternoon";
+    if (hour >= 17 && hour < 21) return "Good evening";
+    return "Good night";
+  }
+
+  useEffect(() => {
+    // set initial greeting and update every minute
+    setGreeting(computeGreeting());
+    const id = setInterval(() => setGreeting(computeGreeting()), 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-white border-b">
       {/* Greeting */}
       <div>
         <h2 className="text-sm text-gray-600">
-          Good morning,{" "}
+          {greeting},{" "}
           <span className="font-semibold text-gray-800">
             {user ? user.firstName : "User "}
           </span>
