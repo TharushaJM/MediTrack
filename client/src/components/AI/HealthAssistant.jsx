@@ -34,39 +34,53 @@ export default function HealthAssistant() {
   };
 
   // ✅ Generate AI summary (mock for now)
-  const generateSummary = (report) => {
-    setLoading(true);
-    setSummary("");
-    setTimeout(() => {
-      setSummary(
-        `AI summary for ${report.type} — This report shows generally stable health metrics. No critical issues found.`
-      );
-      setLoading(false);
-    }, 1000);
-  };
+ const generateSummary = async (report) => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem("token");
 
-  // ✅ Handle chat send
-  const handleSend = () => {
-    if (!input.trim()) return;
-    const userMsg = { sender: "user", text: input };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    simulateAIResponse(input);
-  };
+    const { data } = await axios.post(
+      "http://localhost:5000/api/ai/summary",
+      { reportId: report._id },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setSummary(data.summary);
+  } catch {
+    setSummary("Unable to generate summary.");
+  }
+  setLoading(false);
+};
+
 
   // ✅ Mock AI response
-  const simulateAIResponse = (query) => {
-    const responses = [
-      "Your values look within normal range.",
-      "It would be good to recheck in a few months.",
-      "Keep hydrated and maintain a balanced diet.",
-      "I can detect a slight variation, but nothing alarming.",
-    ];
-    const random = responses[Math.floor(Math.random() * responses.length)];
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { sender: "ai", text: random }]);
-    }, 800);
-  };
+  const sendRealAIMessage = async (question) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const { data } = await axios.post(
+      "http://localhost:5000/api/ai/chat",
+      { reportId: selectedReport._id, question },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setMessages((prev) => [...prev, { sender: "ai", text: data.reply }]);
+  } catch {
+    setMessages((prev) => [
+      ...prev,
+      { sender: "ai", text: "AI unavailable. Please try later." },
+    ]);
+  }
+};
+
+const handleSend = () => {
+  if (!input.trim()) return;
+  const userMsg = { sender: "user", text: input };
+  setMessages((prev) => [...prev, userMsg]);
+
+  sendRealAIMessage(input);
+  setInput("");
+};
 
   return (
     <div className="p-6 bg-[#f8fafc] min-h-screen">
