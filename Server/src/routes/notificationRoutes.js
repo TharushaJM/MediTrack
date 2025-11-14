@@ -73,5 +73,17 @@ router.put("/read-all", protect, async (req, res) => {
   }
 });
 
+// Delete all read notifications for the user
+router.delete("/clear-read", protect, async (req, res) => {
+  try {
+    const result = await Notification.deleteMany({ user: req.user._id, read: true });
+    const deleted = result.deletedCount ?? result.n ?? 0;
+    res.json({ message: "Cleared read notifications", deletedCount: deleted });
+  } catch (err) {
+    console.error("Error clearing read notifications:", err);
+    res.status(500).json({ message: "Failed to clear read notifications" });
+  }
+});
+
 
 export default router;

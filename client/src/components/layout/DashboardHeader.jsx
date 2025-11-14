@@ -10,6 +10,9 @@ export default function DashboardHeader() {
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [markingAll, setMarkingAll] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  // TODO: integrate app toast if available
 
   const dropdownRef = useRef(null);
 
@@ -26,9 +29,12 @@ export default function DashboardHeader() {
 
   async function fetchUser(token) {
     try {
-      const { data } = await axios.get("http://localhost:5000/api/users/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.get(
+        "http://localhost:5000/api/users/profile",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setUser(data);
     } catch (err) {
       console.error("Failed to load user profile:", err);
@@ -63,9 +69,12 @@ export default function DashboardHeader() {
   async function loadNotifications() {
     try {
       const token = localStorage.getItem("token");
-      const { data } = await axios.get("http://localhost:5000/api/notifications", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.get(
+        "http://localhost:5000/api/notifications",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setNotifications(data);
       return data;
     } catch (err) {
@@ -75,52 +84,48 @@ export default function DashboardHeader() {
   }
 
   // ---------------------------------------
-  // Mark all as read (Option A)
+  // Mark all as read (uses bulk endpoint if available)
   // ---------------------------------------
-  async function markAllRead(notes) {
+  async function markAllRead(notes = []) {
+    const token = localStorage.getItem("token");
+    if (!notes || notes.length === 0) {
+      setUnread(0);
+      return;
+    }
+
+    setMarkingAll(true);
     try {
-      const token = localStorage.getItem("token");
-
-      if (!notes || notes.length === 0) {
-        setUnread(0);
-        return;
-      }
-
+      // Prefer bulk endpoint when available to avoid multiple requests
       await axios.put(
         "http://localhost:5000/api/notifications/read-all",
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // update local UI to reflect reads
-      setNotifications((prev) =>
-        prev.map((p) => (notes.find((n) => n._id === p._id) ? { ...p, read: true } : p))
-      );
+      // refresh the notifications list from server (includes read flags)
+      const updated = await loadNotifications();
+      setNotifications(updated || []);
 
       // refresh unread count from server to be safe
-      await fetchUnread(token);
+      await fetchUnread();
     } catch (err) {
       console.log("Mark all read error:", err);
+    } finally {
+      setMarkingAll(false);
     }
   }
 
   // ---------------------------------------
   // Handle bell click
   // ---------------------------------------
-async function handleBellClick() {
-  setOpen((prev) => !prev);
+  async function handleBellClick() {
+    const newOpen = !open;
+    setOpen(newOpen);
 
-  if (!open) {
-    // Load notifications
-    const data = await loadNotifications();
-
-    // Mark all as read
-    await markAllRead(data);
-
-    // Force unread count to zero
-    setUnread(0);
+    if (newOpen) {
+      await loadNotifications();
+    }
   }
-}
 
   // ---------------------------------------
   // Greeting Logic
@@ -176,7 +181,10 @@ async function handleBellClick() {
             onClick={handleBellClick}
             className="text-gray-600 hover:text-blue-600 relative transition"
           >
-            <Bell size={20} className={`${unread > 0 ? "animate-bounce" : ""}`} />
+            <Bell
+              size={20}
+              className={`${unread > 0 ? "animate-bounce" : ""}`}
+            />
 
             {/* Red Badge */}
             {unread > 0 && (
@@ -196,33 +204,89 @@ async function handleBellClick() {
         <AnimatePresence>
           {open && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="absolute right-0 top-14 w-72 bg-white border shadow-lg rounded-xl p-3 z-20"
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute right-0 top-14 w-80 bg-white border shadow-lg rounded-xl p-0 overflow-hidden z-50"
             >
-              <h3 className="font-semibold text-gray-700 mb-2">Notifications</h3>
+              {/* HEADER */}
+              <div className="px-4 py-3 border-b bg-gray-50">
+                <h3 className="font-semibold text-gray-700">Notifications</h3>
+              </div>
 
-              {notifications.length === 0 ? (
-                <p className="text-gray-400 text-sm py-4 text-center">
-                  No notifications yet.
-                </p>
-              ) : (
-                notifications.slice(0, 8).map((n) => (
-                  <div
-                    key={n._id}
-                    className="flex items-start gap-2 p-2 rounded-lg hover:bg-gray-50"
-                  >
-                    <CheckCircle2 className="text-blue-600 w-4 h-4 mt-1" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{n.title}</p>
-                      <p className="text-xs text-gray-500">{n.message}</p>
+              {/* LIST */}
+              <div className="max-h-64 overflow-y-auto px-2 py-2">
+                {notifications.length === 0 ? (
+                  <p className="text-gray-400 text-sm py-6 text-center">
+                    No notifications.
+                  </p>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n._id}
+                      className={`p-3 rounded-lg mb-2 border last:mb-0 ${
+                        n.read
+                          ? "bg-gray-50 text-gray-500"
+                          : "bg-white hover:bg-gray-50"
+                      }`}
+                    >
+                      <p className="text-sm font-medium">{n.title}</p>
+                      <p className="text-xs">{n.message}</p>
                       <span className="text-[10px] text-gray-400">
                         {new Date(n.createdAt).toLocaleTimeString()}
                       </span>
                     </div>
-                  </div>
-                ))
+                  ))
+                )}
+              </div>
+
+              {/* FOOTER BUTTONS */}
+              {notifications.length > 0 && (
+                <div className="flex justify-between items-center px-4 py-3 border-t bg-white">
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await markAllRead(notifications || []);
+                    }}
+                    disabled={markingAll}
+                    className={`text-xs px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-50 
+              ${markingAll ? "opacity-50 pointer-events-none" : ""}`}
+                  >
+                    {markingAll ? "Marking..." : "Mark all as read"}
+                  </button>
+
+                  {notifications.some((n) => n.read) && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        setClearing(true);
+                        try {
+                          const token = localStorage.getItem("token");
+                          await axios.delete(
+                            "http://localhost:5000/api/notifications/clear-read",
+                            {
+                              headers: { Authorization: `Bearer ${token}` },
+                            }
+                          );
+                          await loadNotifications();
+                          await fetchUnread();
+                        } catch (err) {
+                          console.error(
+                            "Failed to clear read notifications",
+                            err
+                          );
+                        } finally {
+                          setClearing(false);
+                        }
+                      }}
+                      disabled={clearing}
+                      className={`text-xs px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-50 
+                ${clearing ? "opacity-50 pointer-events-none" : ""}`}
+                    >
+                      {clearing ? "Clearing..." : "Clear read"}
+                    </button>
+                  )}
+                </div>
               )}
             </motion.div>
           )}
