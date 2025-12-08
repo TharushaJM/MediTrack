@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export function Card({ className, ...props }) {
   return (
     <div
-      className={cn("rounded-xl border bg-white shadow-md hover:shadow-lg transition", className)}
+      className={cn("rounded-xl border bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition", className)}
       {...props}
     />
   );
@@ -19,9 +19,10 @@ export function CardTitle({ className, ...props }) {
 }
 
 export function CardDescription({ className, ...props }) {
-  return <p className={cn("text-sm text-gray-500", className)} {...props} />;
+  return <p className={cn("text-sm text-gray-500 dark:text-gray-400", className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }) {
   return <div className={cn("p-4", className)} {...props} />;
 }
+

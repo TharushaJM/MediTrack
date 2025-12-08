@@ -46,23 +46,23 @@ export default function ReminderCard({ reminder, onDelete, onToggleTaken }) {
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border rounded-xl p-5 shadow-sm"
+      className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-5 shadow-sm"
     >
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <div className="bg-blue-100 p-2 rounded-full">
-            <Pill className="w-5 h-5 text-blue-600" />
+          <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full">
+            <Pill className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <h3 className="font-semibold">{reminder.name}</h3>
-            <p className="text-gray-500 text-sm">{reminder.dosage || "—"}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">{reminder.dosage || "—"}</p>
           </div>
         </div>
 
         <button
           onClick={() => onDelete(reminder._id)}
-          className="text-red-500 hover:text-red-700"
+          className="text-red-500 dark:text-red-400 hover:text-red-700"
         >
           <Trash2 size={18} />
         </button>
@@ -70,25 +70,25 @@ export default function ReminderCard({ reminder, onDelete, onToggleTaken }) {
 
       {/* Time */}
       <div className="flex items-center justify-between my-3">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Clock size={16} className="text-blue-600" />
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <Clock size={16} className="text-blue-600 dark:text-blue-400" />
           {reminder.time}
         </div>
-        <span className="text-xs bg-purple-100 text-purple-600 px-2 rounded-full">
+        <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 rounded-full">
           {reminder.frequency}
         </span>
       </div>
 
       {/* Notes */}
       {reminder.notes && (
-        <p className="italic text-gray-500 text-sm mb-3">“{reminder.notes}”</p>
+        <p className="italic text-gray-500 dark:text-gray-400 text-sm mb-3">“{reminder.notes}”</p>
       )}
 
       {/* Taken toggle */}
       <div
         onClick={toggleTaken}
         className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${
-          taken ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+          taken ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
         }`}
       >
         {taken ? <CheckCircle2 size={16} /> : <Circle size={16} />}
@@ -97,3 +97,4 @@ export default function ReminderCard({ reminder, onDelete, onToggleTaken }) {
     </motion.div>
   );
 }
+

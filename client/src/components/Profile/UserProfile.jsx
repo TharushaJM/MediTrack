@@ -75,25 +75,25 @@ export default function UserProfile() {
     }
   };
 
-  if (!user) return <div className="p-10 text-center text-gray-500">Loading...</div>;
+  if (!user) return <div className="p-10 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
 
   return (
-    <div className="p-6 bg-[#f8fafc] min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Profile</h1>
-      <p className="text-gray-500 mb-6">Manage your personal information</p>
+    <div className="p-6 min-h-screen">
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Profile</h1>
+      <p className="text-gray-500 dark:text-gray-400 mb-6">Manage your personal information</p>
 
       {/* --- Profile Header --- */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 flex justify-between items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl font-bold">
+          <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-xl font-bold">
             {user.firstName?.[0]?.toUpperCase() || "U"}
           </div>
           <div>
             <h2 className="font-semibold text-lg">{`${user.firstName || ""} ${user.lastName || ""}`}</h2>
-            <p className="text-gray-500 text-sm flex items-center gap-1">
+            <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center gap-1">
               <Mail size={14} /> {user.email}
             </p>
-            <div className="flex gap-4 text-gray-500 text-sm mt-1">
+            <div className="flex gap-4 text-gray-500 dark:text-gray-400 text-sm mt-1">
               <span className="flex items-center gap-1">
                 <Calendar size={14} /> {user.age || "--"} years
               </span>
@@ -107,14 +107,18 @@ export default function UserProfile() {
         {editing ? (
           <button
             onClick={handleSave}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+            className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 
+              text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl 
+              transition-all duration-200 font-medium"
           >
             Save Changes
           </button>
         ) : (
           <button
             onClick={() => setEditing(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 
+              text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl 
+              transition-all duration-200 font-medium"
           >
             Edit Profile
           </button>
@@ -168,7 +172,9 @@ export default function UserProfile() {
           <div className="col-span-full flex justify-end mt-2">
             <button
               type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+              className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 
+                text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl 
+                transition-all duration-200 font-medium"
             >
               Update Password
             </button>
@@ -182,9 +188,9 @@ export default function UserProfile() {
 // === Reusable Components ===
 function Card({ title, subtitle, children }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-      <h2 className="font-semibold text-lg mb-1">{title}</h2>
-      <p className="text-gray-500 text-sm mb-4">{subtitle}</p>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6 border border-gray-200 dark:border-gray-700">
+      <h2 className="font-semibold text-lg mb-1 text-gray-800 dark:text-gray-100">{title}</h2>
+      <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{subtitle}</p>
       {children}
     </div>
   );
@@ -193,16 +199,21 @@ function Card({ title, subtitle, children }) {
 function InputField({ label, name, value, onChange, disabled, type = "text" }) {
   return (
     <div>
-      <label className="block text-sm text-gray-600 mb-1">{label}</label>
+      <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1 font-medium">{label}</label>
       <input
         type={type}
         name={name}
         value={value || ""}
         onChange={onChange}
         disabled={disabled}
-        className={`w-full border rounded p-2 bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none ${
-          disabled ? "opacity-80" : ""
-        }`}
+        className={`w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 
+          bg-white dark:bg-gray-700 
+          text-gray-900 dark:text-gray-100
+          placeholder-gray-400 dark:placeholder-gray-500
+          focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
+          focus:border-transparent outline-none
+          transition-colors
+          ${disabled ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
       />
     </div>
   );
@@ -211,13 +222,18 @@ function InputField({ label, name, value, onChange, disabled, type = "text" }) {
 function Dropdown({ label, name, value, onChange, disabled, options }) {
   return (
     <div>
-      <label className="block text-sm text-gray-600 mb-1">{label}</label>
+      <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1 font-medium">{label}</label>
       <select
         name={name}
         value={value || ""}
         onChange={onChange}
         disabled={disabled}
-        className="w-full border rounded p-2 bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none"
+        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2.5 
+          bg-white dark:bg-gray-700 
+          text-gray-900 dark:text-gray-100
+          focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
+          focus:border-transparent outline-none
+          transition-colors"
       >
         <option value="">Select</option>
         {options.map((opt) => (

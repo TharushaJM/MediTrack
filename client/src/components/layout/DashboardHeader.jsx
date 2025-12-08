@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { Bell, User, CheckCircle2 } from "lucide-react";
+import { Bell, User, CheckCircle2, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../../context/ThemeContext";
 
 export default function DashboardHeader() {
   const [user, setUser] = useState(null);
@@ -12,7 +13,9 @@ export default function DashboardHeader() {
   const [notifications, setNotifications] = useState([]);
   const [markingAll, setMarkingAll] = useState(false);
   const [clearing, setClearing] = useState(false);
-  // TODO: integrate app toast if available
+
+  // Use Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
 
   const dropdownRef = useRef(null);
 
@@ -161,12 +164,18 @@ export default function DashboardHeader() {
   // UI
   // ---------------------------------------
   return (
-    <header className="flex items-center justify-between px-6 py-4 bg-white border-b relative">
+    <header
+      className="flex items-center justify-between px-6 py-4 
+  bg-white dark:bg-gray-900 
+  border-b dark:border-gray-700
+  text-gray-800 dark:text-gray-100
+  relative"
+    >
       {/* Greeting Section */}
       <div>
-        <h2 className="text-sm text-gray-600">
+        <h2 className="text-sm text-gray-600 dark:text-gray-300">
           {greeting},{" "}
-          <span className="font-semibold text-gray-800">
+          <span className="font-semibold text-gray-800 dark:text-gray-300">
             {user ? user.firstName : "User"}
           </span>
         </h2>
@@ -174,12 +183,25 @@ export default function DashboardHeader() {
       </div>
 
       {/* Right Side */}
+
       <div className="flex items-center gap-5 relative" ref={dropdownRef}>
+        {/* Dark Mode Toggle Button */}
+        <button
+          onClick={toggleDarkMode}
+          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? (
+            <Sun className="h-5 w-5 text-yellow-400 transition-all duration-300" />
+          ) : (
+            <Moon className="h-5 w-5 text-gray-700 transition-all duration-300" />
+          )}
+        </button>
         {/* Bell Icon */}
         <div className="relative">
           <button
             onClick={handleBellClick}
-            className="text-gray-600 hover:text-blue-600 relative transition"
+            className="text-gray-600 hover:text-blue-600 relative transition dark:text-gray-200 "
           >
             <Bell
               size={20}
@@ -207,27 +229,30 @@ export default function DashboardHeader() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute right-0 top-14 w-80 bg-white border shadow-lg rounded-xl p-0 overflow-hidden z-50"
+              className="absolute right-0 top-14 w-80 
+                          bg-white dark:bg-gray-800 
+                          border dark:border-gray-700 
+                          shadow-lg rounded-xl p-4 z-50"
             >
               {/* HEADER */}
-              <div className="px-4 py-3 border-b bg-gray-50">
-                <h3 className="font-semibold text-gray-700">Notifications</h3>
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700                                 ">  
+                <h3 className="font-semibold text-gray-700 dark:text-gray-200">Notifications</h3>
               </div>
 
               {/* LIST */}
               <div className="max-h-64 overflow-y-auto px-2 py-2">
                 {notifications.length === 0 ? (
-                  <p className="text-gray-400 text-sm py-6 text-center">
+                  <p className="text-gray-500 dark:text-gray-300 text-sm py-6 text-center">
                     No notifications.
                   </p>
                 ) : (
                   notifications.map((n) => (
                     <div
                       key={n._id}
-                      className={`p-3 rounded-lg mb-2 border last:mb-0 ${
+                      className={`p-3 rounded-lg mb-2 border dark:border-gray-700 last:mb-0 ${
                         n.read
-                          ? "bg-gray-50 text-gray-500"
-                          : "bg-white hover:bg-gray-50"
+                          ? "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300"
+                          : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
                       }`}
                     >
                       <p className="text-sm font-medium">{n.title}</p>
@@ -242,15 +267,16 @@ export default function DashboardHeader() {
 
               {/* FOOTER BUTTONS */}
               {notifications.length > 0 && (
-                <div className="flex justify-between items-center px-4 py-3 border-t bg-white">
+                <div className="flex justify-between items-center px-4 py-3 border-t dark:border-gray-700">
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
                       await markAllRead(notifications || []);
                     }}
                     disabled={markingAll}
-                    className={`text-xs px-3 py-1 rounded-md border border-blue-600 text-blue-600 hover:bg-blue-50 
-              ${markingAll ? "opacity-50 pointer-events-none" : ""}`}
+                    className={`text-xs px-3 py-1 rounded-md border border-blue-600 dark:border-blue-500 
+                      text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition
+                      ${markingAll ? "opacity-50 pointer-events-none" : ""}`}
                   >
                     {markingAll ? "Marking..." : "Mark all as read"}
                   </button>
@@ -280,8 +306,9 @@ export default function DashboardHeader() {
                         }
                       }}
                       disabled={clearing}
-                      className={`text-xs px-3 py-1 rounded-md border border-red-600 text-red-600 hover:bg-red-50 
-                ${clearing ? "opacity-50 pointer-events-none" : ""}`}
+                      className={`text-xs px-3 py-1 rounded-md border border-red-600 dark:border-red-500 
+                        text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition
+                        ${clearing ? "opacity-50 pointer-events-none" : ""}`}
                     >
                       {clearing ? "Clearing..." : "Clear read"}
                     </button>

@@ -126,19 +126,19 @@ export default function UserReports() {
   }, []);
 
   return (
-    <div className="p-6 space-y-8 bg-[#f8fafc] min-h-screen">
+    <div className="p-6 space-y-8 min-h-screen">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Medical Reports</h1>
-        <p className="text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Medical Reports</h1>
+        <p className="text-gray-500 dark:text-gray-400">
           Upload and manage your medical documents
         </p>
       </div>
 
       {/* Upload Section */}
-      <Card className="border-2 border-dashed border-blue-300 bg-white">
+      <Card className="border-2 border-dashed border-blue-300 bg-white dark:bg-gray-800">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-600">
+          <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
             <Upload className="w-5 h-5" /> Upload New Report
           </CardTitle>
           <CardDescription>
@@ -196,11 +196,11 @@ export default function UserReports() {
                   }
                 }}
                 disabled={uploading}
-                className={`flex-1 h-[44px] flex items-center justify-center gap-2 rounded-md font-medium text-white transition-all duration-200 shadow-sm
+                className={`flex-1 h-[44px] flex items-center justify-center gap-2 rounded-xl font-medium text-white transition-all duration-200 shadow-lg hover:shadow-xl
         ${
           uploading
             ? "bg-gray-400 cursor-not-allowed"
-            : "bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600"
+            : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
         }
       `}
               >
@@ -262,7 +262,7 @@ export default function UserReports() {
           </form>
 
           {/* File type info */}
-          <div className="flex items-center gap-6 text-sm text-gray-500 pt-2">
+          <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400 pt-2">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               <span>PDF</span>
@@ -283,7 +283,7 @@ export default function UserReports() {
             All Reports ({filteredReports.length})
           </h2>
 
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
             <Filter className="w-4 h-4" />
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-[150px]">
@@ -305,7 +305,7 @@ export default function UserReports() {
         {/* Report Cards */}
         <div className="space-y-3">
           {filteredReports.length === 0 && (
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               No reports found for this category.
             </p>
           )}
@@ -313,13 +313,13 @@ export default function UserReports() {
           {filteredReports.map((r) => (
             <Card
               key={r._id || r.fileUrl}
-              className="p-4 flex items-center justify-between hover:shadow-sm border border-gray-200 transition bg-white"
+              className="p-4 flex items-center justify-between hover:shadow-sm border border-gray-200 dark:border-gray-700 transition bg-white dark:bg-gray-800"
             >
               <div className="flex items-center gap-3">
                 <FileText className="text-blue-500" />
                 <div>
-                  <h3 className="font-medium text-gray-800">{r.type}</h3>
-                  <p className="text-sm text-gray-500">
+                  <h3 className="font-medium text-gray-800 dark:text-gray-100">{r.type}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {new Date(r.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -330,10 +330,15 @@ export default function UserReports() {
                   onClick={() =>
                     setPreviewUrl(`http://localhost:5000/${r.fileUrl}`)
                   }
+                  className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" asChild>
+                <Button 
+                  variant="ghost" 
+                  asChild
+                  className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                >
                   <a href={`http://localhost:5000/${r.fileUrl}`} download>
                     <Download className="w-4 h-4" />
                   </a>
@@ -341,7 +346,7 @@ export default function UserReports() {
                 <Button
                   variant="ghost"
                   onClick={() => handleDelete(r._id)}
-                  className="text-red-500 hover:bg-red-50"
+                  className="text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -354,14 +359,14 @@ export default function UserReports() {
       {/* Preview Modal */}
       {previewUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 shadow-2xl w-11/12 md:w-3/4 lg:w-1/2 relative">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-2xl w-11/12 md:w-3/4 lg:w-1/2 relative">
             <button
               onClick={() => setPreviewUrl(null)}
-              className="absolute top-3 right-4 text-gray-500 hover:text-red-500 text-xl font-bold"
+              className="absolute top-3 right-4 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:text-red-400 text-xl font-bold"
             >
               ✕
             </button>
-            <h2 className="text-xl font-semibold mb-4 text-gray-700">
+            <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200 dark:text-gray-200">
               Report Preview
             </h2>
             {previewUrl.toLowerCase().includes(".pdf") ? (
@@ -383,3 +388,4 @@ export default function UserReports() {
     </div>
   );
 }
+

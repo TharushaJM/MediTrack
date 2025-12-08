@@ -4,7 +4,6 @@ import AddReminderForm from "./AddReminderForm";
 import ReminderCard from "./ReminderCard";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import clockImage from "../MedicationReminder/clockimage.png";
 
 export default function MedicationReminder() {
   const [reminders, setReminders] = useState([]);
@@ -94,16 +93,18 @@ const handleToggleTaken = async (id, newState) => {
 };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white p-6">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950 transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
 
         {/* ---------------- HEADER ---------------- */}
         <header className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-6">
           <div className="flex items-center gap-4">
-            <img src={clockImage} alt="Medication Reminder" className="w-16 h-16" />
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+              <Clock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Medication Reminders</h1>
-              <p className="text-gray-500 text-sm">
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Medication Reminders</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Stay on track with your daily medications — never miss a dose again.
               </p>
             </div>
@@ -111,7 +112,10 @@ const handleToggleTaken = async (id, newState) => {
 
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2 rounded-lg shadow hover:opacity-90 transition"
+            className="flex items-center gap-2 
+              bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 
+              text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl 
+              transition-all duration-200 font-medium"
           >
             <Plus className="w-5 h-5" /> Add Reminder
           </button>
@@ -119,12 +123,12 @@ const handleToggleTaken = async (id, newState) => {
 
         {/* ---------------- REMINDER LIST ---------------- */}
         <section>
-          <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600" /> Upcoming Reminders
+          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Upcoming Reminders
           </h2>
 
           {reminders.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-10 text-center text-gray-500">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-10 text-center text-gray-500 dark:text-gray-400">
               No reminders yet. Click <span className="font-semibold">“Add Reminder”</span> to create one.
             </div>
           ) : (
@@ -149,21 +153,21 @@ const handleToggleTaken = async (id, newState) => {
         )}
 
         {/* ---------------- DAILY SUMMARY ---------------- */}
-        <section className="mt-12 bg-white border rounded-2xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-green-600" /> Daily Summary
+        <section className="mt-12 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" /> Daily Summary
           </h2>
 
           {summary.total === 0 ? (
-            <p className="text-gray-500 text-sm">Add reminders to start tracking.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Add reminders to start tracking.</p>
           ) : (
             <>
-              <p className="text-gray-500 text-sm mb-3">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-3">
                 You’ve taken <strong>{summary.taken}</strong> out of{" "}
                 <strong>{summary.total}</strong> medications today.
               </p>
 
-              <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
+              <div className="w-full bg-gray-100 dark:bg-gray-700 h-3 rounded-full overflow-hidden">
                 <div
                   className="bg-green-500 h-full transition-all duration-500"
                   style={{ width: `${summary.progress * 100}%` }}
@@ -182,3 +186,4 @@ const handleToggleTaken = async (id, newState) => {
     </div>
   );
 }
+

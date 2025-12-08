@@ -69,7 +69,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b bg-gradient-to-r from-blue-50 to-purple-50">
           <div className="flex items-center gap-2 text-blue-700 font-semibold">
@@ -78,7 +78,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-lg"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-200 text-lg"
           >
             ✕
           </button>
@@ -87,14 +87,14 @@ export default function AddRecordForm({ onClose, onCreated }) {
         <form onSubmit={handleSubmit} className="p-6 space-y-8">
           {/* SECTION 1: Mood & Wellbeing */}
           <section>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Brain className="w-5 h-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               How do you feel today?
             </h3>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-600">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">
                   Mood ({form.mood}/10)
                 </label>
                 <input
@@ -109,7 +109,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">
                     Energy ({form.energy}/10)
                   </label>
                   <input
@@ -122,7 +122,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300">
                     Stress ({form.stress}/10)
                   </label>
                   <input
@@ -137,7 +137,13 @@ export default function AddRecordForm({ onClose, onCreated }) {
               </div>
 
               <textarea
-                className="border rounded-xl w-full p-3 mt-2 text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none"
+                className="border border-gray-300 dark:border-gray-600 rounded-xl w-full p-3 mt-2 
+                  bg-white dark:bg-gray-700 
+                  text-gray-900 dark:text-gray-100
+                  placeholder-gray-400 dark:placeholder-gray-500
+                  focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
+                  focus:border-transparent outline-none
+                  transition-colors"
                 rows="3"
                 placeholder="Any thoughts, notes or symptoms today..."
                 value={form.notes}
@@ -148,8 +154,8 @@ export default function AddRecordForm({ onClose, onCreated }) {
 
           {/* SECTION 2: Daily Habits */}
           <section>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Activity className="w-5 h-5 text-green-600" />
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-green-600 dark:text-green-400" />
               Daily Habits
             </h3>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -166,7 +172,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
                 onChange={(e) => update("waterIntake", e.target.value)}
               />
               <select
-                className="border rounded-lg p-3 text-gray-700 focus:ring-2 focus:ring-purple-400"
+                className="border dark:border-gray-700 rounded-lg p-3 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-purple-400"
                 value={form.meals}
                 onChange={(e) => update("meals", e.target.value)}
               >
@@ -185,7 +191,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
 
           {/* SECTION 3: Physical Stats */}
           <section>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
               <Heart className="w-5 h-5 text-pink-500" />
               Body Stats
             </h3>
@@ -204,9 +210,9 @@ export default function AddRecordForm({ onClose, onCreated }) {
               />
             </div>
             {form.height && form.weight && (
-              <p className="mt-3 text-sm text-gray-600">
+              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
                 BMI:{" "}
-                <span className="font-semibold text-blue-600">
+                <span className="font-semibold text-blue-600 dark:text-blue-400">
                   {calcBMI()}
                 </span>{" "}
                 — {getBMICategory(calcBMI())}
@@ -216,18 +222,18 @@ export default function AddRecordForm({ onClose, onCreated }) {
 
           {/* SECTION 4: Symptoms */}
           <section>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
               <Pill className="w-5 h-5 text-indigo-600" />
               Any symptoms today?
             </h3>
             <textarea
-              className="border rounded-xl w-full p-3 text-gray-700 focus:ring-2 focus:ring-indigo-400 outline-none"
+              className="border dark:border-gray-700 rounded-xl w-full p-3 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-400 outline-none"
               rows="2"
               placeholder="E.g. headache, fatigue, mild cough..."
               value={form.symptoms}
               onChange={(e) => update("symptoms", e.target.value)}
             />
-            <label className="flex items-center mt-3 gap-2 text-sm text-gray-700">
+            <label className="flex items-center mt-3 gap-2 text-sm text-gray-700 dark:text-gray-200 dark:text-gray-200">
               <input
                 type="checkbox"
                 checked={form.tookMeds}
@@ -242,7 +248,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
+              className="px-4 py-2 rounded-lg border text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-700 dark:bg-gray-700"
             >
               Cancel
             </button>
@@ -262,11 +268,11 @@ export default function AddRecordForm({ onClose, onCreated }) {
 
 function HabitInput({ icon, placeholder, value, onChange }) {
   return (
-    <div className="flex items-center gap-2 border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-400 transition">
+    <div className="flex items-center gap-2 border dark:border-gray-700 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-400 transition">
       {icon}
       <input
         type="text"
-        className="w-full bg-transparent outline-none text-gray-700 placeholder-gray-400"
+        className="w-full bg-transparent outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400"
         placeholder={placeholder}
         value={value}
         onChange={onChange}
@@ -274,3 +280,4 @@ function HabitInput({ icon, placeholder, value, onChange }) {
     </div>
   );
 }
+
