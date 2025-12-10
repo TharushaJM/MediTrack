@@ -9,40 +9,67 @@ export default function Login() {
   const navigate = useNavigate();
 
   async function handleLogin(e) {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const { data } = await axios.post("http://localhost:5000/api/users/login", {
-        email,
-        password,
-      });
+  try {
+    const { data } = await axios.post(
+      "http://localhost:5000/api/users/login",
+      { email, password }
+    );
 
-      // ✅ Save token
-      localStorage.setItem("token", data.token);
+    //  Save token
+    localStorage.setItem("token", data.token);
 
-      // ✅ Save user as object (so DashboardHeader can read name properly)
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          name: `${data.user.firstName} ${data.user.lastName}`,
-          email: data.user.email,
-        })
+    //  Save full user info, including role & isApproved
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        id: data.user.id,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        name: `${data.user.firstName} ${data.user.lastName}`,
+        email: data.user.email,
+        role: data.user.role,
+        isApproved: data.user.isApproved,
+        specialization: data.user.specialization,
+        licenseNumber: data.user.licenseNumber,
+      })
+    );
+
+    //  Keep backward-compat for Dashboard.jsx
+    localStorage.setItem("role", data.user.role);
+
+    // Optional: warn unapproved doctors
+    if (data.user.role === "doctor" && !data.user.isApproved) {
+      alert(
+        "Your doctor account is pending admin approval. Some features may be restricted."
       );
-
-      alert("Login successful!");
-      navigate("/dashboard"); // Redirect to dashboard
-    } catch (err) {
-      console.error(err);
-      alert("Invalid email or password");
-    } finally {
-      setLoading(false);
     }
+
+    alert("Login successful!");
+
+    //  Send admins to the Admin Dashboard
+    if (data.user.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Invalid email or password");
+  } finally {
+    setLoading(false);
   }
+}
+
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
       <div className="bg-white shadow-lg rounded-lg p-8 w-96">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Login</h2>
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+          Login
+        </h2>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
             type="email"

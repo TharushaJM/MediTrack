@@ -10,13 +10,22 @@ import UserProfile from "./components/Profile/UserProfile";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import HealthAssistant from "./components/AI/HealthAssistant";
 import MedicationReminder from "./components/MedicationReminder/MedicationReminder";
+import AdminDashboard from "./components/Dashboard/Admin/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 //  This wrapper helps control where Navbar appears
 function LayoutWrapper({ children }) {
   const location = useLocation();
 
   // Hide navbar on these routes
-  const hideNavbarRoutes = ["/dashboard", "/reports", "/profile", "/assistant","/reminders"];
+  const hideNavbarRoutes = [
+    "/dashboard",
+    "/reports",
+    "/profile",
+    "/assistant",
+    "/reminders",
+    "/admin",
+  ];
 
   const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
 
@@ -38,6 +47,14 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
 
           {/* Dashboard Pages (without Navbar) */}
           <Route
@@ -56,31 +73,34 @@ export default function App() {
               </DashboardLayout>
             }
           />
-          <Route 
-          path="/assistant" 
-          element={
-            <DashboardLayout>
-          <HealthAssistant />
-          </DashboardLayout>           
-          }
+          <Route
+            path="/assistant"
+            element={
+              <DashboardLayout>
+                <HealthAssistant />
+              </DashboardLayout>
+            }
           />
-          <Route 
-          path="/reminders" 
-          element={
-            <DashboardLayout>
-          <MedicationReminder/>
-          </DashboardLayout>           
-          }
+          <Route
+            path="/reminders"
+            element={
+              <DashboardLayout>
+                <MedicationReminder />
+              </DashboardLayout>
+            }
           />
           <Route
             path="/profile"
             element={
               <DashboardLayout>
                 <UserProfile />
-              </DashboardLayout>          
+              </DashboardLayout>
             }
-          />
+            />
+         
+          
         </Routes>
+        
       </LayoutWrapper>
     </BrowserRouter>
   );
