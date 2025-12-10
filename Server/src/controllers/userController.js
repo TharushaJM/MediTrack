@@ -3,25 +3,55 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 
+// helper to generate token (optional but cleaner)
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+};
+
 // ✅ REGISTER USER
 export const registerUser = asyncHandler(async (req, res) => {
-  const { firstName, lastName, email, password, role } = req.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    role: requestedRole,
+    specialization,
+    licenseNumber,
+  } = req.body;
 
   const existingUser = await User.findOne({ email });
-  if (existingUser) return res.status(400).json({ message: "Email already exists" });
+  if (existingUser) {
+    return res.status(400).json({ message: "Email already exists" });
+  }
 
-  // ❌ REMOVE manual hash — the schema handles it
+  // ✅ Only allow 'patient' or 'doctor' via public registration
+  let role = "patient";
+  if (requestedRole === "doctor") {
+    role = "doctor";
+  } else {
+    role = "patient";
+  }
+
+  // ✅ Let the schema handle password hashing + isApproved default
   const newUser = await User.create({
     firstName,
     lastName,
     email,
     password, // plain — auto-hash in pre('save')
     role,
+    specialization: specialization || "",
+    licenseNumber: licenseNumber || "",
+    // isApproved will be set by schema:
+    // doctor  -> false
+    // others  -> true
   });
 
-  const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  const token = generateToken(newUser);
 
   res.status(201).json({
     message: "User registered successfully",
@@ -32,6 +62,9 @@ export const registerUser = asyncHandler(async (req, res) => {
       lastName: newUser.lastName,
       email: newUser.email,
       role: newUser.role,
+      isApproved: newUser.isApproved,
+      specialization: newUser.specialization,
+      licenseNumber: newUser.licenseNumber,
     },
   });
 });
@@ -53,9 +86,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Invalid email or password" });
   }
 
-  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  const token = generateToken(user);
 
   console.log("✅ Login success for:", user.email);
 
@@ -67,6 +98,9 @@ export const loginUser = asyncHandler(async (req, res) => {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
+      isApproved: user.isApproved,          // 👈 important for blocking unapproved doctors in UI
+      specialization: user.specialization,  // optional but handy
+      licenseNumber: user.licenseNumber,
     },
   });
 });
@@ -94,6 +128,10 @@ export const updateProfile = asyncHandler(async (req, res) => {
   user.bloodType = req.body.bloodType || user.bloodType;
   user.height = req.body.height ?? user.height;
   user.weight = req.body.weight ?? user.weight;
+
+  // (optional) allow doctor to update specialization/license:
+  // user.specialization = req.body.specialization || user.specialization;
+  // user.licenseNumber = req.body.licenseNumber || user.licenseNumber;
 
   // ✅ Change password safely
   if (req.body.currentPassword && req.body.newPassword) {

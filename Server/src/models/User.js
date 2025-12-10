@@ -3,19 +3,48 @@ import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
-    // Core fields
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ["patient", "doctor"], default: "patient" },
+    firstName: {
+      type: String,
+      required: true,
+    },
+    lastName: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
 
-    // Additional profile details
-    age: { type: Number },
-    gender: { type: String },
-    bloodType: { type: String },
-    height: { type: Number },
-    weight: { type: Number },
+    role: {
+      type: String,
+      enum: ["patient", "doctor", "admin"],
+      default: "patient",
+    },
+
+    isApproved: {
+      type: Boolean,
+      default: function () {
+        return this.role === "doctor" ? false : true;
+      },
+    },
+
+    specialization: {
+      type: String,
+      default: "",
+    },
+
+    licenseNumber: {
+      type: String,
+      default: "",
+    },
+
+    // ... your other existing fields (age, gender, etc.)
   },
   { timestamps: true }
 );

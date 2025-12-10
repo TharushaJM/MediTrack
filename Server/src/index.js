@@ -9,6 +9,8 @@ import reminderRoutes from "./routes/reminderRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import "./cron/reminderCron.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -33,6 +35,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 app.get("/", (req, res) => {
