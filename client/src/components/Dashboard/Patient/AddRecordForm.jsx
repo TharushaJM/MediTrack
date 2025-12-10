@@ -69,16 +69,16 @@ export default function AddRecordForm({ onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b bg-gradient-to-r from-blue-50 to-purple-50">
-          <div className="flex items-center gap-2 text-blue-700 font-semibold">
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-gray-700">
+          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-semibold">
             <ClipboardList className="w-5 h-5" />
             <span>Daily Wellness Check-In</span>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-200 text-lg"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-lg"
           >
             ✕
           </button>
@@ -172,7 +172,11 @@ export default function AddRecordForm({ onClose, onCreated }) {
                 onChange={(e) => update("waterIntake", e.target.value)}
               />
               <select
-                className="border dark:border-gray-700 rounded-lg p-3 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-purple-400"
+                className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 
+                  bg-white dark:bg-gray-700 
+                  text-gray-700 dark:text-gray-200 
+                  focus:ring-2 focus:ring-purple-400 dark:focus:ring-purple-500 
+                  focus:border-transparent outline-none"
                 value={form.meals}
                 onChange={(e) => update("meals", e.target.value)}
               >
@@ -227,35 +231,47 @@ export default function AddRecordForm({ onClose, onCreated }) {
               Any symptoms today?
             </h3>
             <textarea
-              className="border dark:border-gray-700 rounded-xl w-full p-3 text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-400 outline-none"
+              className="border border-gray-300 dark:border-gray-600 rounded-xl w-full p-3 
+                bg-white dark:bg-gray-700 
+                text-gray-900 dark:text-gray-100
+                placeholder-gray-400 dark:placeholder-gray-500
+                focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 
+                focus:border-transparent outline-none"
               rows="2"
               placeholder="E.g. headache, fatigue, mild cough..."
               value={form.symptoms}
               onChange={(e) => update("symptoms", e.target.value)}
             />
-            <label className="flex items-center mt-3 gap-2 text-sm text-gray-700 dark:text-gray-200 dark:text-gray-200">
+            <label className="flex items-center mt-3 gap-2 text-sm text-gray-700 dark:text-gray-200">
               <input
                 type="checkbox"
                 checked={form.tookMeds}
                 onChange={(e) => update("tookMeds", e.target.checked)}
+                className="w-4 h-4 accent-blue-600"
               />
               I took my medication today
             </label>
           </section>
 
           {/* SUBMIT BUTTON */}
-          <div className="flex justify-end gap-3 border-t pt-4">
+          <div className="flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-700 dark:bg-gray-700"
+              className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                text-gray-600 dark:text-gray-400 
+                hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium hover:opacity-90 transition"
+              className="px-5 py-2 rounded-xl 
+                bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 
+                text-white font-medium shadow-lg 
+                disabled:opacity-50 disabled:cursor-not-allowed
+                transition-all duration-200"
             >
               {saving ? "Saving..." : "Save Check-in"}
             </button>
@@ -268,11 +284,13 @@ export default function AddRecordForm({ onClose, onCreated }) {
 
 function HabitInput({ icon, placeholder, value, onChange }) {
   return (
-    <div className="flex items-center gap-2 border dark:border-gray-700 rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-400 transition">
+    <div className="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 
+      bg-white dark:bg-gray-700
+      focus-within:ring-2 focus-within:ring-blue-400 dark:focus-within:ring-blue-500 transition">
       {icon}
       <input
         type="text"
-        className="w-full bg-transparent outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400"
+        className="w-full bg-transparent outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
         placeholder={placeholder}
         value={value}
         onChange={onChange}

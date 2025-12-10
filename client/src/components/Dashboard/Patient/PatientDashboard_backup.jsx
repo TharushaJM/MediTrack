@@ -88,6 +88,7 @@ export default function PatientDashboard() {
             value={records.length}
             sub="+3 this week"
             icon={<Activity className="w-6 h-6 text-blue-500 dark:text-blue-400" />}
+            color="from-blue-100 to-blue-50"
           />
           <StatCard
             label="Last Update"
@@ -100,6 +101,7 @@ export default function PatientDashboard() {
             }
             sub={records[0] ? "Updated recently" : ""}
             icon={<Calendar className="w-6 h-6 text-green-500 dark:text-green-400" />}
+            color="from-green-100 to-green-50"
           />
           <StatCard
             label="This Month"
@@ -111,6 +113,7 @@ export default function PatientDashboard() {
             }
             sub="Records logged"
             icon={<TrendingUp className="w-6 h-6 text-purple-500 dark:text-purple-400" />}
+            color="from-purple-100 to-purple-50"
           />
         </div>
 
@@ -135,7 +138,7 @@ export default function PatientDashboard() {
                   className={`px-4 py-2 text-sm rounded-md font-medium transition ${
                     viewMode === "simple"
                       ? "bg-white dark:bg-gray-800 shadow text-blue-600 dark:text-blue-400"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-100"
                   }`}
                 >
                   Simple View
@@ -145,7 +148,7 @@ export default function PatientDashboard() {
                   className={`px-4 py-2 text-sm rounded-md font-medium transition ${
                     viewMode === "chart"
                       ? "bg-white dark:bg-gray-800 shadow text-blue-600 dark:text-blue-400"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-100"
                   }`}
                 >
                   Graph View
@@ -184,7 +187,7 @@ export default function PatientDashboard() {
    COMPONENTS
 ------------------------ */
 
-function StatCard({ label, value, sub, icon }) {
+function StatCard({ label, value, sub, icon, color }) {
   return (
     <div
       className="bg-white dark:bg-gray-800 
@@ -207,21 +210,8 @@ function StatCard({ label, value, sub, icon }) {
 function SimpleView({ records, onDelete }) {
   if (!records.length)
     return (
-      <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-            <FileText className="w-10 h-10 text-blue-500 dark:text-blue-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">
-              No health records yet
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Start tracking your wellness journey by clicking{" "}
-              <span className="font-semibold text-blue-600 dark:text-blue-400">"Add Record"</span>
-            </p>
-          </div>
-        </div>
+      <div className="bg-gray-50 border border-gray-200 dark:border-gray-700 rounded-xl p-10 text-center text-gray-500 dark:text-gray-400">
+        No records yet. Click <span className="font-semibold">“Add Record”</span> to create one.
       </div>
     );
 
@@ -230,105 +220,49 @@ function SimpleView({ records, onDelete }) {
       {records.map((r, i) => (
         <div
           key={r._id || i}
-          className="border border-gray-200 dark:border-gray-700 rounded-2xl p-6 bg-white dark:bg-gray-800 
-            shadow-sm hover:shadow-lg transition-all duration-200 group"
+          className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition"
         >
-          {/* Header with Date and Actions */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                  {new Date(r.date || r.createdAt).toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })}
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Health check-in
-                </p>
-              </div>
-            </div>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+              {new Date(r.date || r.createdAt).toLocaleDateString()}
+            </h3>
             <button
               onClick={() => onDelete(r._id)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity
-                p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 
-                rounded-lg flex items-center gap-1 text-sm"
+              className="text-red-500 dark:text-red-400 text-sm hover:underline"
             >
-              <Trash2 className="w-4 h-4" />
               Delete
             </button>
           </div>
 
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {r.sleepHours && (
-              <MetricBadge 
-                icon={<Moon className="w-4 h-4" />}
-                label="Sleep" 
-                value={`${r.sleepHours}h`} 
-                color="blue"
-              />
-            )}
-            {r.waterIntake && (
-              <MetricBadge 
-                icon={<Droplets className="w-4 h-4" />}
-                label="Water" 
-                value={`${r.waterIntake}L`} 
-                color="cyan"
-              />
-            )}
-            {r.mood && (
-              <MetricBadge 
-                icon={<Smile className="w-4 h-4" />}
-                label="Mood" 
-                value={`${r.mood}/10`} 
-                color="yellow"
-              />
-            )}
-            {r.bmi && (
-              <MetricBadge 
-                icon={<Activity className="w-4 h-4" />}
-                label="BMI" 
-                value={r.bmi} 
-                color="purple"
-              />
-            )}
+          <div className="flex flex-wrap gap-6 text-sm text-gray-700 dark:text-gray-200 mb-2">
+            {r.sleepHours && <Metric label="Sleep" value={`${r.sleepHours}h`} />}
+            {r.waterIntake && <Metric label="Water" value={`${r.waterIntake}L`} />}
+            {r.mood && <Metric label="Mood" value={`${r.mood}/10`} />}
+            {r.bmi && <Metric label="BMI" value={r.bmi} />}
           </div>
 
-          {/* Notes */}
-          {r.notes && (
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-300 italic">
-                " {r.notes}"
-              </p>
-            </div>
-          )}
+          {r.notes && <p className="text-sm italic text-gray-500 dark:text-gray-400">{r.notes}</p>}
         </div>
       ))}
     </div>
   );
 }
 
-// ✅ New MetricBadge Component for color-coded metrics
-function MetricBadge({ icon, label, value, color }) {
-  const colors = {
-    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
-    cyan: "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300",
-    yellow: "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300",
-    purple: "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300",
+// ✅ Updated Metric Component with matching Lucide icons
+function Metric({ label, value }) {
+  const icons = {
+    Sleep: <Moon className="w-4 h-4 text-blue-600 dark:text-blue-400" />,
+    Water: <Droplets className="w-4 h-4 text-cyan-500" />,
+    Mood: <Smile className="w-4 h-4 text-yellow-500" />,
+    BMI: <BarChart2 className="w-4 h-4 text-purple-500" />,
   };
 
   return (
-    <div className={`${colors[color]} rounded-xl p-3 flex items-center gap-2`}>
-      {icon}
+    <div className="flex items-center gap-3">
+      {icons[label] || <Smile className="w-4 h-4 text-gray-400" />}
       <div>
-        <div className="text-xs opacity-75">{label}</div>
-        <div className="font-semibold">{value}</div>
+        <div className="font-medium text-gray-800 dark:text-gray-100">{label}</div>
+        <div className="text-gray-500 dark:text-gray-400 text-sm">{value}</div>
       </div>
     </div>
   );
@@ -337,20 +271,8 @@ function MetricBadge({ icon, label, value, color }) {
 function GraphView({ records }) {
   if (!records.length)
     return (
-      <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-            <BarChart2 className="w-10 h-10 text-blue-500 dark:text-blue-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">
-              Not enough data yet
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Add more health records to see visual charts and trends
-            </p>
-          </div>
-        </div>
+      <div className="bg-gray-50 border border-gray-200 dark:border-gray-700 rounded-xl p-10 text-center text-gray-500 dark:text-gray-400">
+        Not enough data to display charts.
       </div>
     );
 
@@ -390,3 +312,4 @@ function GraphView({ records }) {
     </>
   );
 }
+
