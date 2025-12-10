@@ -217,10 +217,12 @@ export default function DashboardHeader() {
           </button>
         </div>
 
-        {/* User Icon */}
-        <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center">
-          <User size={16} />
-        </div>
+        {/* User Profile Icon */}
+        {user && (
+          <div className="w-9 h-9 bg-blue-500 dark:bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold shadow-md hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors cursor-pointer">
+            {user.firstName?.charAt(0).toUpperCase() || user.name?.charAt(0).toUpperCase() || "U"}
+          </div>
+        )}
 
         {/* Notification Dropdown */}
         <AnimatePresence>

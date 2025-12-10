@@ -21,14 +21,14 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#007BCE] dark:bg-gray-900 text-white flex flex-col justify-between border-r dark:border-gray-800 shadow-lg">
-        <div>
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors overflow-hidden">
+      {/* Sidebar - Fixed and Scrollable */}
+      <aside className="w-64 bg-[#007BCE] dark:bg-gray-900 text-white flex flex-col justify-between border-r dark:border-gray-800 shadow-lg fixed left-0 top-0 h-screen overflow-y-auto">
+        <div className="flex-1">
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-3 px-6 py-6 border-b border-blue-400/30 dark:border-gray-800 hover:bg-blue-600 dark:hover:bg-gray-800 transition-all"
+            className="flex items-center gap-3 px-6 py-6 border-b border-blue-400/30 dark:border-gray-800 hover:bg-blue-600 dark:hover:bg-gray-800 transition-all sticky top-0 bg-[#007BCE] dark:bg-gray-900 z-10"
           >
             <div className="bg-white text-[#007BCE] dark:bg-gray-800 dark:text-blue-400 w-9 h-9 flex items-center justify-center rounded-full font-bold shadow-md">
               M
@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }) {
           </Link>
 
           {/* Nav Links */}
-          <nav className="mt-4 px-3 space-y-1">
+          <nav className="mt-4 px-3 space-y-1 pb-4">
             <NavItem
               to="/dashboard"
               icon={<LayoutDashboard size={20} />}
@@ -70,26 +70,8 @@ export default function DashboardLayout({ children }) {
           </nav>
         </div>
 
-        {/* User Info & Logout */}
-        <div className="border-t border-blue-400/30 dark:border-gray-800">
-          {user && (
-            <div className="px-6 py-4 border-b border-blue-400/20 dark:border-gray-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-400 dark:bg-gray-800 rounded-full flex items-center justify-center font-semibold text-white">
-                  {user.name?.charAt(0).toUpperCase() || "U"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {user.name || "User"}
-                  </p>
-                  <p className="text-xs text-white/70 dark:text-gray-400 truncate">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          
+        {/* Logout Button - Sticky at bottom */}
+        <div className="border-t border-blue-400/30 dark:border-gray-800 sticky bottom-0 bg-[#007BCE] dark:bg-gray-900">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-6 py-4 text-sm text-white/90 hover:bg-blue-600 dark:hover:bg-gray-800 transition-all w-full group"
@@ -100,10 +82,10 @@ export default function DashboardLayout({ children }) {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Content - With margin for sidebar */}
+      <div className="flex-1 flex flex-col ml-64 h-screen">
         <DashboardHeader />
-        <main className="p-6 flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-6">{children}</main>
       </div>
     </div>
   );
