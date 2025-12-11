@@ -40,13 +40,6 @@ export default function Login() {
     //  Keep backward-compat for Dashboard.jsx
     localStorage.setItem("role", data.user.role);
 
-    // Optional: warn unapproved doctors
-    if (data.user.role === "doctor" && !data.user.isApproved) {
-      alert(
-        "Your doctor account is pending admin approval. Some features may be restricted."
-      );
-    }
-
     alert("Login successful!");
 
     //  Send admins to the Admin Dashboard
@@ -57,7 +50,8 @@ export default function Login() {
     }
   } catch (err) {
     console.error(err);
-    alert("Invalid email or password");
+    const errorMsg = err.response?.data?.message || "Invalid email or password";
+    alert(errorMsg);
   } finally {
     setLoading(false);
   }

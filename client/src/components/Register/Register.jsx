@@ -3,7 +3,15 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Register() {
-  const [form, setForm] = useState({ firstName: "",lastName: "", email: "", password: "", role: "patient" });
+  const [form, setForm] = useState({ 
+    firstName: "",
+    lastName: "", 
+    email: "", 
+    password: "", 
+    role: "patient",
+    specialization: "",
+    licenseNumber: ""
+  });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -11,11 +19,24 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/users/register", form);
-      alert("Registration successful! Please log in.");
-      navigate("/login");
+      const response = await axios.post("http://localhost:5000/api/users/register", form);
+      
+      // Check if it's a doctor registration (no token returned)
+      if (form.role === "doctor") {
+        alert(response.data.message || "Doctor registration successful! Your account is pending admin approval. You will be able to login once approved.");
+        navigate("/login");
+      } else {
+        // Patient registration - auto login
+        if (response.data.token) {
+          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+        }
+        alert("Registration successful! Please log in.");
+        navigate("/login");
+      }
     } catch (err) {
-      alert("Error registering user");
+      const errorMsg = err.response?.data?.message || "Error registering user";
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -66,6 +87,29 @@ export default function Register() {
             <option value="patient">Patient</option>
             <option value="doctor">Doctor</option>
           </select>
+
+          {/* Doctor-specific fields */}
+          {form.role === "doctor" && (
+            <>
+              <input
+                type="text"
+                placeholder="Specialization (e.g., Cardiologist, General Physician)"
+                className="border p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none"
+                value={form.specialization}
+                onChange={(e) => setForm({ ...form, specialization: e.target.value })}
+                required
+              />
+              <input
+                type="text"
+                placeholder="License Number"
+                className="border p-2 rounded focus:ring-2 focus:ring-blue-400 outline-none"
+                value={form.licenseNumber}
+                onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })}
+                required
+              />
+            </>
+          )}
+
           <button
             type="submit"
             className="bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"

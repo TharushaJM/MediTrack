@@ -51,6 +51,24 @@ export const registerUser = asyncHandler(async (req, res) => {
     // others  -> true
   });
 
+  // ✅ For doctors, don't auto-login (they need approval)
+  if (role === "doctor") {
+    return res.status(201).json({
+      message: "Doctor registration successful! Your account is pending admin approval.",
+      user: {
+        id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        role: newUser.role,
+        isApproved: newUser.isApproved,
+        specialization: newUser.specialization,
+        licenseNumber: newUser.licenseNumber,
+      },
+    });
+  }
+
+  // ✅ For patients, auto-login with token
   const token = generateToken(newUser);
 
   res.status(201).json({
@@ -84,6 +102,14 @@ export const loginUser = asyncHandler(async (req, res) => {
   if (!isMatch) {
     console.log("❌ Password mismatch for:", email);
     return res.status(400).json({ message: "Invalid email or password" });
+  }
+
+  // ✅ Check if doctor is approved
+  if (user.role === "doctor" && !user.isApproved) {
+    console.log("❌ Doctor not approved yet:", email);
+    return res.status(403).json({ 
+      message: "Your account is pending admin approval. Please wait for approval before logging in." 
+    });
   }
 
   const token = generateToken(user);
@@ -147,5 +173,94 @@ export const updateProfile = asyncHandler(async (req, res) => {
   res.json({
     message: "Profile updated successfully",
     user: updatedUser,
+  });
+});
+
+// ✅ GET PENDING DOCTORS (for admin approval)
+export const getPendingDoctors = asyncHandler(async (req, res) => {
+  const pendingDoctors = await User.find({
+    role: "doctor",
+    isApproved: false,
+  }).select("-password");
+
+  res.json(pendingDoctors);
+});
+
+// ✅ GET ALL DOCTORS (approved + pending)
+export const getAllDoctors = asyncHandler(async (req, res) => {
+  const doctors = await User.find({
+    role: "doctor",
+  })
+    .select("-password")
+    .sort({ createdAt: -1 }); // newest first
+
+  res.json(doctors);
+});
+
+// ✅ GET ALL PATIENTS
+export const getAllPatients = asyncHandler(async (req, res) => {
+  const patients = await User.find({
+    role: "patient",
+  })
+    .select("-password")
+    .sort({ createdAt: -1 }); // newest first
+
+  res.json(patients);
+});
+
+// ✅ APPROVE DOCTOR
+export const approveDoctor = asyncHandler(async (req, res) => {
+  const doctor = await User.findById(req.params.id);
+
+  if (!doctor) {
+    res.status(404);
+    throw new Error("Doctor not found");
+  }
+
+  if (doctor.role !== "doctor") {
+    res.status(400);
+    throw new Error("User is not a doctor");
+  }
+
+  doctor.isApproved = true;
+  await doctor.save();
+
+  res.json({
+    message: "Doctor approved successfully",
+    doctor: {
+      id: doctor._id,
+      firstName: doctor.firstName,
+      lastName: doctor.lastName,
+      email: doctor.email,
+      specialization: doctor.specialization,
+      isApproved: doctor.isApproved,
+    },
+  });
+});
+
+// ✅ REJECT DOCTOR
+export const rejectDoctor = asyncHandler(async (req, res) => {
+  const doctor = await User.findById(req.params.id);
+
+  if (!doctor) {
+    res.status(404);
+    throw new Error("Doctor not found");
+  }
+
+  if (doctor.role !== "doctor") {
+    res.status(400);
+    throw new Error("User is not a doctor");
+  }
+
+  // Option 1: Delete the doctor
+  await User.findByIdAndDelete(req.params.id);
+
+  // Option 2: Keep but mark as rejected (would need a 'rejected' field)
+  // doctor.isApproved = false;
+  // doctor.rejected = true;
+  // await doctor.save();
+
+  res.json({
+    message: "Doctor rejected and removed",
   });
 });
