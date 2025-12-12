@@ -42,11 +42,13 @@ export default function Login() {
 
     alert("Login successful!");
 
-    //  Send admins to the Admin Dashboard
+    //  Redirect based on role
     if (data.user.role === "admin") {
-      navigate("/admin");
+      navigate("/admin", { replace: true });
+    } else if (data.user.role === "doctor") {
+      navigate("/doctor-dashboard", { replace: true });
     } else {
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     }
   } catch (err) {
     console.error(err);

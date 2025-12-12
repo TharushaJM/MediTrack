@@ -10,9 +10,11 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
-      setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      // Removed admin redirect - now handled by ProtectedRoute
     }
-  }, []);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

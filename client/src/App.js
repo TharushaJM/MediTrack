@@ -11,6 +11,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import HealthAssistant from "./components/AI/HealthAssistant";
 import MedicationReminder from "./components/MedicationReminder/MedicationReminder";
 import AdminDashboard from "./components/Dashboard/Admin/AdminDashboard";
+import DoctorDashboard from "./components/Dashboard/Doctor/DoctorDashBoard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 //  This wrapper helps control where Navbar appears
@@ -25,6 +26,7 @@ function LayoutWrapper({ children }) {
     "/assistant",
     "/reminders",
     "/admin",
+    "/doctor-dashboard",
   ];
 
   const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
@@ -47,60 +49,79 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* Admin Dashboard - Admin Only */}
           <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
+            path="/admin"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Dashboard Pages (without Navbar) */}
+          {/* Doctor Dashboard - Doctor Only */}
+          <Route
+            path="/doctor-dashboard"
+            element={
+              <ProtectedRoute doctorOnly={true}>
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Patient Dashboard Pages - Patient Only */}
           <Route
             path="/dashboard"
             element={
-              <DashboardLayout>
-                <Dashboard />
-              </DashboardLayout>
+              <ProtectedRoute patientOnly={true}>
+                <DashboardLayout>
+                  <Dashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/reports"
             element={
-              <DashboardLayout>
-                <UserReports />
-              </DashboardLayout>
+              <ProtectedRoute patientOnly={true}>
+                <DashboardLayout>
+                  <UserReports />
+                </DashboardLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/assistant"
             element={
-              <DashboardLayout>
-                <HealthAssistant />
-              </DashboardLayout>
+              <ProtectedRoute patientOnly={true}>
+                <DashboardLayout>
+                  <HealthAssistant />
+                </DashboardLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/reminders"
             element={
-              <DashboardLayout>
-                <MedicationReminder />
-              </DashboardLayout>
+              <ProtectedRoute patientOnly={true}>
+                <DashboardLayout>
+                  <MedicationReminder />
+                </DashboardLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/profile"
             element={
-              <DashboardLayout>
-                <UserProfile />
-              </DashboardLayout>
+              <ProtectedRoute patientOnly={true}>
+                <DashboardLayout>
+                  <UserProfile />
+                </DashboardLayout>
+              </ProtectedRoute>
             }
-            />
-         
-          
+          />
         </Routes>
-        
       </LayoutWrapper>
     </BrowserRouter>
   );
