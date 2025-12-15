@@ -20,7 +20,24 @@ export const registerUser = asyncHandler(async (req, res) => {
     email,
     password,
     role: requestedRole,
+    // Doctor-specific fields
+    title,
+    gender,
     specialization,
+    degree,
+    registrationId,
+    university,
+    mobile,
+    address,
+    location,
+    designation,
+    lastWorkPlace,
+    // Patient-specific fields
+    phone,
+    dateOfBirth,
+    city,
+    injuryCondition,
+    // Legacy field
     licenseNumber,
   } = req.body;
 
@@ -37,6 +54,12 @@ export const registerUser = asyncHandler(async (req, res) => {
     role = "patient";
   }
 
+  // Handle profile image upload
+  let profileImageUrl = "";
+  if (req.file) {
+    profileImageUrl = `/uploads/profiles/${req.file.filename}`;
+  }
+
   // ✅ Let the schema handle password hashing + isApproved default
   const newUser = await User.create({
     firstName,
@@ -44,7 +67,25 @@ export const registerUser = asyncHandler(async (req, res) => {
     email,
     password, // plain — auto-hash in pre('save')
     role,
+    // Common fields
+    title: title || "",
+    gender: gender || "",
+    address: address || "",
+    profileImage: profileImageUrl,
+    // Doctor-specific fields
     specialization: specialization || "",
+    degree: degree || "",
+    registrationId: registrationId || "",
+    university: university || "",
+    mobile: mobile || "",
+    location: location || "",
+    designation: designation || "",
+    lastWorkPlace: lastWorkPlace || "",
+    // Patient-specific fields
+    phone: phone || "",
+    dateOfBirth: dateOfBirth || "",
+    city: city || "",
+    injuryCondition: injuryCondition || "",
     licenseNumber: licenseNumber || "",
     // isApproved will be set by schema:
     // doctor  -> false
@@ -62,8 +103,17 @@ export const registerUser = asyncHandler(async (req, res) => {
         email: newUser.email,
         role: newUser.role,
         isApproved: newUser.isApproved,
+        title: newUser.title,
+        gender: newUser.gender,
         specialization: newUser.specialization,
-        licenseNumber: newUser.licenseNumber,
+        degree: newUser.degree,
+        registrationId: newUser.registrationId,
+        university: newUser.university,
+        mobile: newUser.mobile,
+        address: newUser.address,
+        location: newUser.location,
+        designation: newUser.designation,
+        lastWorkPlace: newUser.lastWorkPlace,
       },
     });
   }

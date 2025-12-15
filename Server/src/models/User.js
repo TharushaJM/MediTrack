@@ -34,17 +34,93 @@ const userSchema = new mongoose.Schema(
       },
     },
 
+    // Doctor-specific fields (optional for patients)
+    title: {
+      type: String,
+      default: "",
+    },
+
+    gender: {
+      type: String,
+      default: "",
+    },
+
     specialization: {
       type: String,
       default: "",
     },
 
-    licenseNumber: {
+    degree: {
       type: String,
       default: "",
     },
 
-    // ... your other existing fields (age, gender, etc.)
+    registrationId: {
+      type: String,
+      default: "",
+    },
+
+    university: {
+      type: String,
+      default: "",
+    },
+
+    mobile: {
+      type: String,
+      default: "",
+    },
+
+    address: {
+      type: String,
+      default: "",
+    },
+
+    location: {
+      type: String,
+      default: "",
+    },
+
+    designation: {
+      type: String,
+      default: "",
+    },
+
+    lastWorkPlace: {
+      type: String,
+      default: "",
+    },
+
+    // Patient-specific fields
+    phone: {
+      type: String,
+      default: "",
+    },
+
+    dateOfBirth: {
+      type: String,
+      default: "",
+    },
+
+    city: {
+      type: String,
+      default: "",
+    },
+
+    injuryCondition: {
+      type: String,
+      default: "",
+    },
+
+    profileImage: {
+      type: String,
+      default: "",
+    },
+
+    // Legacy field - keeping for backward compatibility
+    licenseNumber: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

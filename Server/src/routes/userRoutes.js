@@ -1,4 +1,6 @@
 import express from "express";
+import multer from "multer";
+import path from "path";
 
 import {
   registerUser,
@@ -15,8 +17,31 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Multer configuration for profile images
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/profiles/");
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, "profile-" + Date.now() + ext);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
+    }
+  },
+});
+
 // Public routes
-router.post("/register", registerUser);
+router.post("/register", upload.single("profileImage"), registerUser);
 router.post("/login", loginUser);
 
 // Protected user routes
