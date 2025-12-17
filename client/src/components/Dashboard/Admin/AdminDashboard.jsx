@@ -55,22 +55,8 @@ export default function AdminDashboard() {
   const [approvingId, setApprovingId] = useState(null);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Mock data for charts (you can replace with real API data)
-  const userGrowthData = [
-    { month: "Jan", users: 120 },
-    { month: "Feb", users: 180 },
-    { month: "Mar", users: 240 },
-    { month: "Apr", users: 320 },
-    { month: "May", users: 410 },
-    { month: "Jun", users: 520 },
-  ];
-
-  const userDistributionData = [
-    { name: "Patients", value: 450 },
-    { name: "Doctors", value: 68 },
-    { name: "Admins", value: 2 },
-  ];
+  const [userGrowthData, setUserGrowthData] = useState([]);
+  const [userDistributionData, setUserDistributionData] = useState([]);
 
   // Auth is now handled by ProtectedRoute wrapper - no need for component-level guard
   // Fetch Dashboard Data
@@ -102,15 +88,60 @@ export default function AdminDashboard() {
         );
         setAllPatients(patientsRes.data || []);
 
+        const totalDoctors = allDoctorsRes.data?.length || 0;
+        const totalPatients = patientsRes.data?.length || 0;
+        const totalUsers = totalDoctors + totalPatients;
+
         // Update stats
         setStats({
-          totalUsers: (allDoctorsRes.data?.length || 0) + (patientsRes.data?.length || 0),
-          totalPatients: patientsRes.data?.length || 0,
-          totalDoctors: allDoctorsRes.data?.length || 0,
+          totalUsers: totalUsers,
+          totalPatients: totalPatients,
+          totalDoctors: totalDoctors,
           pendingApprovals: pendingRes.data?.length || 0,
           totalRecords: 0,
           totalReports: 0,
         });
+
+        // Calculate user distribution for pie chart
+        const adminCount = 1; // Assuming at least 1 admin (the logged-in user)
+        setUserDistributionData([
+          { name: "Patients", value: totalPatients },
+          { name: "Doctors", value: totalDoctors },
+          { name: "Admins", value: adminCount },
+        ]);
+
+        // Calculate user growth data (group users by registration month)
+        const allUsers = [...(allDoctorsRes.data || []), ...(patientsRes.data || [])];
+        const monthlyData = {};
+        const currentDate = new Date();
+        
+        // Initialize last 6 months
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+          const monthKey = date.toLocaleString('en-US', { month: 'short' });
+          monthlyData[monthKey] = 0;
+        }
+
+        // Count users by registration month
+        allUsers.forEach(user => {
+          if (user.createdAt) {
+            const userDate = new Date(user.createdAt);
+            const monthKey = userDate.toLocaleString('en-US', { month: 'short' });
+            if (monthlyData.hasOwnProperty(monthKey)) {
+              monthlyData[monthKey]++;
+            }
+          }
+        });
+
+        // Convert to cumulative growth
+        let cumulative = 0;
+        const growthData = Object.keys(monthlyData).map(month => {
+          cumulative += monthlyData[month];
+          return { month, users: cumulative };
+        });
+
+        setUserGrowthData(growthData);
+
       } catch (err) {
         console.error(err);
         setError("Failed to load dashboard data.");

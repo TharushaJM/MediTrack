@@ -1,11 +1,11 @@
 ﻿import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Mail, Calendar, User, Phone, MapPin, Heart, Ruler, Weight, Shield, Camera, Save, Edit3, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Calendar, User, Phone, MapPin, Briefcase, GraduationCap, Award, Shield, Camera, Save, Edit3, Lock, Eye, EyeOff, Clock, DollarSign, Loader2 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-export default function UserProfile() {
+export default function DoctorProfile() {
   const [user, setUser] = useState(null);
   const [form, setForm] = useState({});
   const [editing, setEditing] = useState(false);
@@ -15,19 +15,13 @@ export default function UserProfile() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwords, setPasswords] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  const [passwords, setPasswords] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const { data } = await axios.get(`${API_URL}/api/users/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.get(`${API_URL}/api/users/profile`, { headers: { Authorization: `Bearer ${token}` } });
       setUser(data);
       setForm(data);
     } catch (err) {
@@ -37,21 +31,15 @@ export default function UserProfile() {
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  useEffect(() => { fetchProfile(); }, []);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSave = async () => {
     try {
       setSaving(true);
       const token = localStorage.getItem("token");
-      const { data } = await axios.put(`${API_URL}/api/users/profile`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.put(`${API_URL}/api/users/profile`, form, { headers: { Authorization: `Bearer ${token}` } });
       toast.success("Profile updated successfully!");
       setUser(data.user);
       setForm(data.user);
@@ -65,20 +53,12 @@ export default function UserProfile() {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    if (passwords.newPassword !== passwords.confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-    if (passwords.newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
+    if (passwords.newPassword !== passwords.confirmPassword) { toast.error("New passwords do not match"); return; }
+    if (passwords.newPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     try {
       setSaving(true);
       const token = localStorage.getItem("token");
-      await axios.put(`${API_URL}/api/users/profile`, passwords, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(`${API_URL}/api/users/profile`, passwords, { headers: { Authorization: `Bearer ${token}` } });
       toast.success("Password changed successfully!");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error) {
@@ -111,13 +91,14 @@ export default function UserProfile() {
 
   const tabs = [
     { id: "personal", label: "Personal Info", icon: User },
-    { id: "health", label: "Health Metrics", icon: Heart },
+    { id: "professional", label: "Professional", icon: Briefcase },
     { id: "security", label: "Security", icon: Shield },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-950 dark:to-gray-900 p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Hero Card */}
         <div className="relative bg-gradient-to-r from-[#007BFF] to-[#0056b3] dark:from-gray-800 dark:to-gray-700 rounded-2xl shadow-xl overflow-hidden mb-6">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white transform translate-x-1/3 -translate-y-1/3"></div>
@@ -129,17 +110,15 @@ export default function UserProfile() {
                 <div className="w-28 h-28 rounded-full border-4 border-white/30 shadow-2xl overflow-hidden bg-gray-200">
                   <img src={getProfileImage()} alt={user.firstName} className="w-full h-full object-cover" onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${user.firstName}&background=007BFF&color=fff&size=150`; }} />
                 </div>
-                <button className="absolute bottom-0 right-0 w-9 h-9 bg-white dark:bg-gray-700 rounded-full shadow-lg flex items-center justify-center text-[#007BFF] hover:scale-110 transition-transform">
-                  <Camera size={16} />
-                </button>
+                <button className="absolute bottom-0 right-0 w-9 h-9 bg-white dark:bg-gray-700 rounded-full shadow-lg flex items-center justify-center text-[#007BFF] hover:scale-110 transition-transform"><Camera size={16} /></button>
               </div>
               <div className="text-center md:text-left flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">{user.firstName} {user.lastName}</h1>
-                <p className="text-blue-100 dark:text-gray-400 flex items-center justify-center md:justify-start gap-2 mb-3"><Mail size={16} />{user.email}</p>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-blue-100 dark:text-gray-400">
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">Dr. {user.firstName} {user.lastName}</h1>
+                <p className="text-blue-100 dark:text-gray-400 flex items-center justify-center md:justify-start gap-2 mb-2"><Briefcase size={16} />{user.specialization || "General Physician"}</p>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-blue-100 dark:text-gray-400">
+                  <span className="flex items-center gap-1"><Mail size={14} /> {user.email}</span>
                   {user.phone && <span className="flex items-center gap-1"><Phone size={14} /> {user.phone}</span>}
-                  {user.city && <span className="flex items-center gap-1"><MapPin size={14} /> {user.city}</span>}
-                  {user.gender && <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">{user.gender}</span>}
+                  {user.experience && <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full"><Award size={12} /> {user.experience} yrs exp</span>}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -156,15 +135,16 @@ export default function UserProfile() {
           </div>
         </div>
 
+        {/* Tabs */}
         <div className="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === tab.id ? "bg-[#007BFF] text-white shadow-md" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
-              <tab.icon size={18} />
-              <span className="hidden sm:inline">{tab.label}</span>
+              <tab.icon size={18} /><span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
 
+        {/* Tab Content */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
           {activeTab === "personal" && (
             <div className="p-6">
@@ -185,26 +165,24 @@ export default function UserProfile() {
             </div>
           )}
 
-          {activeTab === "health" && (
+          {activeTab === "professional" && (
             <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center"><Heart size={20} className="text-red-500" /></div>
-                <div><h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Health Metrics</h2><p className="text-sm text-gray-500 dark:text-gray-400">Your physical measurements and health data</p></div>
+                <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center"><Briefcase size={20} className="text-green-500" /></div>
+                <div><h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Professional Details</h2><p className="text-sm text-gray-500 dark:text-gray-400">Your medical credentials and practice info</p></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <SelectField label="Blood Type" name="bloodType" value={form.bloodType} onChange={handleChange} disabled={!editing} options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]} />
-                <InputField label="Height (cm)" name="height" type="number" value={form.height} onChange={handleChange} disabled={!editing} icon={Ruler} placeholder="170" />
-                <InputField label="Weight (kg)" name="weight" type="number" value={form.weight} onChange={handleChange} disabled={!editing} icon={Weight} placeholder="70" />
-                <InputField label="Medical Condition" name="injuryCondition" value={form.injuryCondition} onChange={handleChange} disabled={!editing} icon={AlertCircle} placeholder="Any existing conditions" />
+                <SelectField label="Specialization" name="specialization" value={form.specialization} onChange={handleChange} disabled={!editing} options={["General Physician", "Cardiologist", "Dermatologist", "Neurologist", "Orthopedic", "Pediatrician", "Psychiatrist", "Gynecologist", "Ophthalmologist", "ENT Specialist"]} />
+                <InputField label="Years of Experience" name="experience" type="number" value={form.experience} onChange={handleChange} disabled={!editing} icon={Award} placeholder="10" />
+                <InputField label="Medical License No." name="licenseNumber" value={form.licenseNumber} onChange={handleChange} disabled={!editing} icon={GraduationCap} placeholder="SLMC-12345" />
+                <InputField label="Hospital/Clinic" name="hospital" value={form.hospital} onChange={handleChange} disabled={!editing} icon={Briefcase} placeholder="National Hospital" />
+                <InputField label="Consultation Fee (LKR)" name="consultationFee" type="number" value={form.consultationFee} onChange={handleChange} disabled={!editing} icon={DollarSign} placeholder="2500" />
+                <InputField label="Available Hours" name="availableHours" value={form.availableHours} onChange={handleChange} disabled={!editing} icon={Clock} placeholder="9:00 AM - 5:00 PM" />
               </div>
-              {form.height && form.weight && (
-                <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-xl border border-green-200 dark:border-gray-600">
-                  <div className="flex items-center justify-between">
-                    <div><p className="text-sm text-gray-600 dark:text-gray-400">Your BMI</p><p className="text-2xl font-bold text-[#007BFF]">{(form.weight / ((form.height / 100) ** 2)).toFixed(1)}</p></div>
-                    <div className="flex items-center gap-2 text-[#28A745]"><CheckCircle size={20} /><span className="font-medium">{(() => { const bmi = form.weight / ((form.height / 100) ** 2); if (bmi < 18.5) return "Underweight"; if (bmi < 25) return "Normal"; if (bmi < 30) return "Overweight"; return "Obese"; })()}</span></div>
-                  </div>
-                </div>
-              )}
+              <div className="mt-5">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bio / About</label>
+                <textarea name="bio" value={form.bio || ""} onChange={handleChange} disabled={!editing} rows={4} placeholder="Brief description about your experience and expertise..." className={`w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all resize-none ${!editing ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`} />
+              </div>
             </div>
           )}
 

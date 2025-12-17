@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }) {
             <NavItem
               to="/assistant"
               icon={<Brain size={20} />}
-              text="AI Health"
+              text="AI Health Assist"
             />
             <NavItem
               to="/find-doctor"

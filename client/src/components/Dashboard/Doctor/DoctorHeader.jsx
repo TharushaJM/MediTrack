@@ -1,8 +1,25 @@
 import { useState } from "react";
 import { Bell, Search, Moon, Sun } from "lucide-react";
+import { useTheme } from "../../../context/ThemeContext";
 
-export default function DoctorHeader({ doctor, darkMode, setDarkMode }) {
+export default function DoctorHeader({ doctor }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const { darkMode, toggleDarkMode } = useTheme();
+
+  // Get profile image URL
+  const getProfileImage = () => {
+    if (doctor?.profileImage) {
+      // Check if it's a full URL (from seeder with Unsplash)
+      if (doctor.profileImage.startsWith("http")) {
+        return doctor.profileImage;
+      }
+      // Local upload
+      return `http://localhost:5000${doctor.profileImage}`;
+    }
+    return null;
+  };
+
+  const profileImage = getProfileImage();
 
   return (
     <header
@@ -37,7 +54,7 @@ export default function DoctorHeader({ doctor, darkMode, setDarkMode }) {
         <div className="flex items-center gap-4 ml-6">
           {/* Dark Mode Toggle */}
           <button
-            onClick={() => setDarkMode(!darkMode)}
+            onClick={toggleDarkMode}
             className={`p-2 rounded-lg ${
               darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
             } transition`}
@@ -91,10 +108,18 @@ export default function DoctorHeader({ doctor, darkMode, setDarkMode }) {
                 {doctor?.specialization || "Cardiologist"}
               </p>
             </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center font-semibold text-white shadow-md">
-              {doctor?.firstName?.charAt(0)}
-              {doctor?.lastName?.charAt(0)}
-            </div>
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt="Profile"
+                className="w-10 h-10 rounded-full object-cover shadow-md"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center font-semibold text-white shadow-md">
+                {doctor?.firstName?.charAt(0)}
+                {doctor?.lastName?.charAt(0)}
+              </div>
+            )}
           </div>
         </div>
       </div>

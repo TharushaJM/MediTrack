@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Users,
   Calendar,
@@ -19,10 +20,12 @@ import {
 } from "recharts";
 import DoctorSidebar from "./DoctorSidebar";
 import DoctorHeader from "./DoctorHeader";
+import DoctorProfile from "./DoctorProfile";
+import { useTheme } from "../../../context/ThemeContext";
 
 
 export default function DoctorDashboard() {
-  const [darkMode, setDarkMode] = useState(true);
+  const { darkMode } = useTheme();
   const [activeMenu, setActiveMenu] = useState("dashboard");
   const [doctor, setDoctor] = useState(null);
 
@@ -81,27 +84,42 @@ export default function DoctorDashboard() {
     },
   ];
 
-  // Fetch doctor profile
+  // Fetch doctor profile from API (to get profileImage)
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setDoctor(JSON.parse(userData));
-    }
+    const fetchDoctorProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const { data } = await axios.get("http://localhost:5000/api/users/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setDoctor(data);
+      } catch (error) {
+        // Fallback to localStorage if API fails
+        const userData = localStorage.getItem("user");
+        if (userData) {
+          setDoctor(JSON.parse(userData));
+        }
+      }
+    };
+    fetchDoctorProfile();
   }, []);
 
   return (
-    <div className={`min-h-screen ${darkMode ? "dark bg-gray-950" : "bg-gray-50"}`}>
+    <div className={`min-h-screen ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
      
       
       {/* Sidebar */}
-      <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} darkMode={darkMode} />
+      <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
       {/* Main Content */}
       <div className="ml-64">
         {/* Top Bar - Using DoctorHeader Component */}
-        <DoctorHeader doctor={doctor} darkMode={darkMode} setDarkMode={setDarkMode} />
+        <DoctorHeader doctor={doctor} />
 
-        {/* Dashboard Content */}
+        {/* Render Profile or Dashboard Content */}
+        {activeMenu === "profile" ? (
+          <DoctorProfile />
+        ) : (
         <main className="p-8">
 
           {/* Summary Cards */}
@@ -112,6 +130,7 @@ export default function DoctorDashboard() {
               value="248"
               change="+12 this month"
               color="blue"
+              darkMode={darkMode}
             />
             <SummaryCard
               icon={<Calendar className="w-6 h-6" />}
@@ -119,6 +138,7 @@ export default function DoctorDashboard() {
               value="8"
               change="3 completed"
               color="green"
+              darkMode={darkMode}
             />
             <SummaryCard
               icon={<FileText className="w-6 h-6" />}
@@ -126,15 +146,16 @@ export default function DoctorDashboard() {
               value="5"
               change="2 urgent"
               color="orange"
+              darkMode={darkMode}
             />
           </div>
 
           {/* Main Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Upcoming Appointments - Takes 2 columns */}
-            <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <div className={`lg:col-span-2 ${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"} border rounded-xl p-6 shadow-sm`}>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-800"} flex items-center gap-2`}>
                   <Clock className="w-5 h-5 text-blue-500" />
                   Upcoming Appointments
                 </h3>
@@ -148,28 +169,29 @@ export default function DoctorDashboard() {
                   <AppointmentCard
                     key={appointment.id}
                     appointment={appointment}
+                    darkMode={darkMode}
                   />
                 ))}
               </div>
             </div>
 
             {/* Weekly Patient Visits Chart */}
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+            <div className={`${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"} border rounded-xl p-6 shadow-sm`}>
+              <h3 className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-800"} mb-6 flex items-center gap-2`}>
                 <TrendingUp className="w-5 h-5 text-green-500" />
                 Weekly Visits
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={weeklyVisits}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="day" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "#374151" : "#E5E7EB"} />
+                  <XAxis dataKey="day" stroke={darkMode ? "#9CA3AF" : "#6B7280"} />
+                  <YAxis stroke={darkMode ? "#9CA3AF" : "#6B7280"} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1F2937",
-                      border: "1px solid #374151",
+                      backgroundColor: darkMode ? "#1F2937" : "#FFFFFF",
+                      border: darkMode ? "1px solid #374151" : "1px solid #E5E7EB",
                       borderRadius: "8px",
-                      color: "#F3F4F6",
+                      color: darkMode ? "#F3F4F6" : "#1F2937",
                     }}
                   />
                   <Bar dataKey="visits" fill="#3B82F6" radius={[8, 8, 0, 0]} />
@@ -184,31 +206,36 @@ export default function DoctorDashboard() {
               icon={<Activity className="w-5 h-5 text-blue-500" />}
               label="Avg. Consultation Time"
               value="25 min"
+              darkMode={darkMode}
             />
             <QuickStat
               icon={<UserCheck className="w-5 h-5 text-green-500" />}
               label="Patient Satisfaction"
               value="98%"
+              darkMode={darkMode}
             />
             <QuickStat
               icon={<Clock className="w-5 h-5 text-purple-500" />}
               label="Next Appointment"
               value="9:00 AM"
+              darkMode={darkMode}
             />
             <QuickStat
               icon={<TrendingUp className="w-5 h-5 text-orange-500" />}
               label="Monthly Growth"
               value="+15%"
+              darkMode={darkMode}
             />
           </div>
         </main>
+        )}
       </div>
     </div>
   );
 }
 
 // Summary Card Component
-function SummaryCard({ icon, title, value, change, color }) {
+function SummaryCard({ icon, title, value, change, color, darkMode }) {
   const colors = {
     blue: "from-blue-500 to-blue-600",
     green: "from-green-500 to-green-600",
@@ -216,7 +243,7 @@ function SummaryCard({ icon, title, value, change, color }) {
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition">
+    <div className={`${darkMode ? "bg-gray-900 border-gray-800 hover:border-gray-700" : "bg-white border-gray-200 hover:border-gray-300"} border rounded-xl p-6 transition shadow-sm`}>
       <div className="flex items-center justify-between mb-4">
         <div
           className={`p-3 bg-gradient-to-br ${colors[color]} rounded-lg shadow-lg`}
@@ -224,33 +251,33 @@ function SummaryCard({ icon, title, value, change, color }) {
           {icon}
         </div>
       </div>
-      <h3 className="text-gray-400 text-sm mb-1">{title}</h3>
-      <p className="text-3xl font-bold text-white mb-1">{value}</p>
-      <p className="text-xs text-gray-500">{change}</p>
+      <h3 className={`${darkMode ? "text-gray-400" : "text-gray-500"} text-sm mb-1`}>{title}</h3>
+      <p className={`text-3xl font-bold ${darkMode ? "text-white" : "text-gray-800"} mb-1`}>{value}</p>
+      <p className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>{change}</p>
     </div>
   );
 }
 
 // Appointment Card Component
-function AppointmentCard({ appointment }) {
+function AppointmentCard({ appointment, darkMode }) {
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-800 border border-gray-700 rounded-lg hover:border-gray-600 transition">
+    <div className={`flex items-center justify-between p-4 ${darkMode ? "bg-gray-800 border-gray-700 hover:border-gray-600" : "bg-gray-50 border-gray-200 hover:border-gray-300"} border rounded-lg transition`}>
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center font-semibold text-white">
           {appointment.avatar}
         </div>
         <div>
-          <p className="font-medium text-white">{appointment.patientName}</p>
-          <p className="text-sm text-gray-400">{appointment.condition}</p>
+          <p className={`font-medium ${darkMode ? "text-white" : "text-gray-800"}`}>{appointment.patientName}</p>
+          <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{appointment.condition}</p>
         </div>
       </div>
       <div className="text-right">
-        <p className="text-sm font-medium text-gray-300">{appointment.time}</p>
+        <p className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-600"}`}>{appointment.time}</p>
         <span
           className={`inline-block px-3 py-1 mt-1 rounded-full text-xs font-medium ${
             appointment.status === "Completed"
-              ? "bg-green-500/20 text-green-400"
-              : "bg-yellow-500/20 text-yellow-400"
+              ? "bg-green-500/20 text-green-500"
+              : "bg-yellow-500/20 text-yellow-600"
           }`}
         >
           {appointment.status}
@@ -261,14 +288,14 @@ function AppointmentCard({ appointment }) {
 }
 
 // Quick Stat Component
-function QuickStat({ icon, label, value }) {
+function QuickStat({ icon, label, value, darkMode }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <div className={`${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"} border rounded-xl p-4 shadow-sm`}>
       <div className="flex items-center gap-3 mb-2">
         {icon}
-        <span className="text-sm text-gray-400">{label}</span>
+        <span className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{label}</span>
       </div>
-      <p className="text-xl font-bold text-white">{value}</p>
+      <p className={`text-xl font-bold ${darkMode ? "text-white" : "text-gray-800"}`}>{value}</p>
     </div>
   );
 }

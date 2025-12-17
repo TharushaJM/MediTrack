@@ -38,6 +38,7 @@ export default function Login() {
           isApproved: data.user.isApproved,
           specialization: data.user.specialization,
           licenseNumber: data.user.licenseNumber,
+          profileImage: data.user.profileImage,
         })
       );
 
