@@ -136,7 +136,7 @@ export default function UserReports() {
       </div>
 
       {/* Upload Section */}
-      <Card className="border-2 border-dashed border-blue-300 bg-white dark:bg-gray-800">
+      <Card className="border-2 border-dashed border-blue-300 bg-white dark:bg-gray-900">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
             <Upload className="w-5 h-5" /> Upload New Report
@@ -313,7 +313,7 @@ export default function UserReports() {
           {filteredReports.map((r) => (
             <Card
               key={r._id || r.fileUrl}
-              className="p-4 flex items-center justify-between hover:shadow-sm border border-gray-200 dark:border-gray-700 transition bg-white dark:bg-gray-800"
+              className="p-4 flex items-center justify-between hover:shadow-sm border border-gray-200 dark:border-gray-700 transition bg-white dark:bg-gray-900"
             >
               <div className="flex items-center gap-3">
                 <FileText className="text-blue-500" />
@@ -359,7 +359,7 @@ export default function UserReports() {
       {/* Preview Modal */}
       {previewUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-2xl w-11/12 md:w-3/4 lg:w-1/2 relative">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-2xl w-11/12 md:w-3/4 lg:w-1/2 relative">
             <button
               onClick={() => setPreviewUrl(null)}
               className="absolute top-3 right-4 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:text-red-400 text-xl font-bold"

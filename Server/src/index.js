@@ -7,6 +7,7 @@ import recordRoutes from "./routes/recordRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import appointmentRoutes from "./routes/appointmentRoutes.js";
 import "./cron/reminderCron.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -34,6 +35,7 @@ app.use("/api/records", recordRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/appointments", appointmentRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
 

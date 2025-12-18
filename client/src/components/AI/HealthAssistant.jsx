@@ -152,7 +152,7 @@ const handleSend = () => {
     <div className="p-6 min-h-screen">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
+        <div className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
             <Brain className="text-blue-600 dark:text-blue-400 w-6 h-6" />
             <div>
@@ -165,7 +165,7 @@ const handleSend = () => {
         </div>
 
         {/* Report Selector */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
           <h2 className="font-semibold text-lg mb-2 text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <FileText className="text-blue-600 dark:text-blue-400" /> Choose Report
           </h2>
@@ -184,7 +184,7 @@ const handleSend = () => {
 
         {/* Summary */}
         {selectedReport && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
               <h2 className="font-bold text-xl text-white flex items-center gap-2">
@@ -230,7 +230,7 @@ const handleSend = () => {
                         </h3>
                         <div className="space-y-2">
                           {parsedSummary.numbers.map((num, idx) => (
-                            <div key={idx} className="flex items-start gap-2 bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
+                            <div key={idx} className="flex items-start gap-2 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3">
                               <span className="text-lg">📊</span>
                               <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">
                                 {num}
@@ -254,7 +254,7 @@ const handleSend = () => {
                         </h3>
                         <div className="space-y-2">
                           {parsedSummary.actions.map((action, idx) => (
-                            <div key={idx} className="flex items-start gap-3 bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
+                            <div key={idx} className="flex items-start gap-3 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3">
                               <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                               <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">
                                 {action}
@@ -278,7 +278,7 @@ const handleSend = () => {
                         </h3>
                         <div className="space-y-2">
                           {parsedSummary.questions.map((q, idx) => (
-                            <div key={idx} className="flex items-start gap-2 bg-white/50 dark:bg-gray-800/50 rounded-lg p-3">
+                            <div key={idx} className="flex items-start gap-2 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3">
                               <span className="text-lg">💬</span>
                               <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">
                                 {q}
@@ -322,7 +322,7 @@ const handleSend = () => {
 
         {/* Chat Section */}
         {selectedReport && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 h-[500px] flex flex-col">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 h-[500px] flex flex-col">
             <div className="flex items-center gap-2 mb-4">
               <MessageSquare className="text-blue-600 dark:text-blue-400" />
               <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100">Chat with AI</h2>

@@ -16,6 +16,8 @@ import MedicationReminder from "./components/MedicationReminder/MedicationRemind
 import AdminDashboard from "./components/Dashboard/Admin/AdminDashboard";
 import DoctorDashboard from "./components/Dashboard/Doctor/DoctorDashBoard";
 import FindDoctor from "./components/Dashboard/Patient/FindDoctor";
+import BookAppointment from "./components/Dashboard/Patient/BookAppointment";
+import MyAppointments from "./components/Dashboard/Patient/MyAppointments";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 //  This wrapper helps control where Navbar appears
@@ -30,6 +32,8 @@ function LayoutWrapper({ children }) {
     "/assistant",
     "/reminders",
     "/find-doctor",
+    "/book-appointment",
+    "/my-appointments",
     "/admin",
     "/doctor-dashboard",
     "/choose-role",
@@ -131,6 +135,26 @@ export default function App() {
               <ProtectedRoute patientOnly={true}>
                 <DashboardLayout>
                   <FindDoctor />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-appointments"
+            element={
+              <ProtectedRoute patientOnly={true}>
+                <DashboardLayout>
+                  <MyAppointments />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/book-appointment"
+            element={
+              <ProtectedRoute patientOnly={true}>
+                <DashboardLayout>
+                  <BookAppointment />
                 </DashboardLayout>
               </ProtectedRoute>
             }

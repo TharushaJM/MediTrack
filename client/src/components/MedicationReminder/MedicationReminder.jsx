@@ -128,7 +128,7 @@ const handleToggleTaken = async (id, newState) => {
           </h2>
 
           {reminders.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-10 text-center text-gray-500 dark:text-gray-400">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-10 text-center text-gray-500 dark:text-gray-400">
               No reminders yet. Click <span className="font-semibold">“Add Reminder”</span> to create one.
             </div>
           ) : (
@@ -153,7 +153,7 @@ const handleToggleTaken = async (id, newState) => {
         )}
 
         {/* ---------------- DAILY SUMMARY ---------------- */}
-        <section className="mt-12 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-2xl shadow-sm p-6">
+        <section className="mt-12 bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-2xl shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" /> Daily Summary
           </h2>

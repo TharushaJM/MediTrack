@@ -12,7 +12,7 @@ import {
 export default function WellnessChart({ records }) {
   if (!records?.length)
     return (
-      <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-2xl p-10 text-center text-gray-500 dark:text-gray-400">
+      <div className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-2xl p-10 text-center text-gray-500 dark:text-gray-400">
         Not enough data yet to show your wellness trends.
       </div>
     );
@@ -32,7 +32,7 @@ export default function WellnessChart({ records }) {
     }));
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
+    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
       <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
         Your Wellness Trends
       </h3>

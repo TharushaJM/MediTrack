@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Mail, Calendar, User, Phone, MapPin, Heart, Ruler, Weight, Shield, Camera, Save, Edit3, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
@@ -156,7 +156,7 @@ export default function UserProfile() {
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm">
+        <div className="flex gap-2 mb-6 bg-white dark:bg-gray-900 p-1.5 rounded-xl shadow-sm">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === tab.id ? "bg-[#007BFF] text-white shadow-md" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
               <tab.icon size={18} />
@@ -165,7 +165,7 @@ export default function UserProfile() {
           ))}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
           {activeTab === "personal" && (
             <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
@@ -265,7 +265,7 @@ function InputField({ label, name, value, onChange, disabled, type = "text", ico
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>
       <div className="relative">
         {Icon && <Icon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />}
-        <input type={type} name={name} value={value || ""} onChange={onChange} disabled={disabled} placeholder={placeholder} className={`w-full ${Icon ? "pl-11" : "pl-4"} pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all ${disabled ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`} />
+        <input type={type} name={name} value={value || ""} onChange={onChange} disabled={disabled} placeholder={placeholder} className={`w-full ${Icon ? "pl-11" : "pl-4"} pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all ${disabled ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900" : ""}`} />
       </div>
       {helper && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helper}</p>}
     </div>
@@ -276,7 +276,7 @@ function SelectField({ label, name, value, onChange, disabled, options }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>
-      <select name={name} value={value || ""} onChange={onChange} disabled={disabled} className={`w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all appearance-none cursor-pointer ${disabled ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}>
+      <select name={name} value={value || ""} onChange={onChange} disabled={disabled} className={`w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all appearance-none cursor-pointer ${disabled ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900" : ""}`}>
         <option value="">Select {label}</option>
         {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
       </select>

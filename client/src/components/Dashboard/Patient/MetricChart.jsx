@@ -21,13 +21,13 @@ export default function MetricChart({ title, data, color, dataKey, unit }) {
 
   if (chartData.length === 0)
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 shadow-sm p-5 text-center text-gray-500 dark:text-gray-400">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 shadow-sm p-5 text-center text-gray-500 dark:text-gray-400">
         No {title.toLowerCase()} data yet
       </div>
     );
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition">
       <h4
         className="font-semibold text-gray-700 dark:text-gray-200 mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
       >

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, Link } from "react-router-dom";
-import { LayoutDashboard, FileText, User, LogOut, AlarmClock, Brain, Activity, Stethoscope } from "lucide-react";
+import { LayoutDashboard, FileText, User, LogOut, AlarmClock, Brain, Activity, Stethoscope, CalendarCheck } from "lucide-react";
 import DashboardHeader from "./DashboardHeader";
 import { useState, useEffect } from "react";
 
@@ -63,6 +63,11 @@ export default function DashboardLayout({ children }) {
               to="/find-doctor"
               icon={<Stethoscope size={20} />}
               text="Find Doctor"
+            />
+            <NavItem
+              to="/my-appointments"
+              icon={<CalendarCheck size={20} />}
+              text="My Appointments"
             />
             <NavItem
               to="/reminders"

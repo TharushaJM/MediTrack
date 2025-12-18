@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 import {
   Users,
   Calendar,
@@ -8,6 +9,10 @@ import {
   Clock,
   TrendingUp,
   UserCheck,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import {
   BarChart,
@@ -23,11 +28,16 @@ import DoctorHeader from "./DoctorHeader";
 import DoctorProfile from "./DoctorProfile";
 import { useTheme } from "../../../context/ThemeContext";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function DoctorDashboard() {
   const { darkMode } = useTheme();
   const [activeMenu, setActiveMenu] = useState("dashboard");
   const [doctor, setDoctor] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(null);
 
   // Mock data for patient visits
   const weeklyVisits = [
@@ -40,69 +50,110 @@ export default function DoctorDashboard() {
     { day: "Sun", visits: 5 },
   ];
 
-  // Mock upcoming appointments
-  const upcomingAppointments = [
-    {
-      id: 1,
-      patientName: "Sarah Johnson",
-      time: "09:00 AM",
-      condition: "Follow-up Consultation",
-      status: "Waiting",
-      avatar: "SJ",
-    },
-    {
-      id: 2,
-      patientName: "Michael Chen",
-      time: "10:30 AM",
-      condition: "General Checkup",
-      status: "Completed",
-      avatar: "MC",
-    },
-    {
-      id: 3,
-      patientName: "Emily Rodriguez",
-      time: "11:00 AM",
-      condition: "Cardiology Review",
-      status: "Waiting",
-      avatar: "ER",
-    },
-    {
-      id: 4,
-      patientName: "David Kumar",
-      time: "02:00 PM",
-      condition: "Diabetes Management",
-      status: "Waiting",
-      avatar: "DK",
-    },
-    {
-      id: 5,
-      patientName: "Lisa Anderson",
-      time: "03:30 PM",
-      condition: "Physical Therapy",
-      status: "Waiting",
-      avatar: "LA",
-    },
-  ];
+  // Fetch appointments function
+  const fetchAppointments = async () => {
+    try {
+      setAppointmentsLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`${API_URL}/api/appointments/doctor-appointments`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAppointments(res.data || []);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      toast.error("Failed to load appointments");
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  };
 
-  // Fetch doctor profile from API (to get profileImage)
+  // Get patient initials
+  const getPatientInitials = (patient) => {
+    if (!patient) return "?";
+    const first = patient.firstName?.[0] || "";
+    const last = patient.lastName?.[0] || "";
+    return (first + last).toUpperCase() || "?";
+  };
+
+  // Fetch doctor profile and appointments
   useEffect(() => {
-    const fetchDoctorProfile = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const { data } = await axios.get("http://localhost:5000/api/users/profile", {
+        
+        // Fetch doctor profile
+        const profileRes = await axios.get(`${API_URL}/api/users/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setDoctor(data);
+        setDoctor(profileRes.data);
+
+        // Fetch doctor's appointments
+        const appointmentsRes = await axios.get(`${API_URL}/api/appointments/doctor-appointments`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAppointments(appointmentsRes.data || []);
       } catch (error) {
+        console.error("Error fetching data:", error);
         // Fallback to localStorage if API fails
         const userData = localStorage.getItem("user");
         if (userData) {
           setDoctor(JSON.parse(userData));
         }
+      } finally {
+        setLoading(false);
       }
     };
-    fetchDoctorProfile();
+    fetchData();
   }, []);
+
+  // Update appointment status
+  const handleStatusUpdate = async (appointmentId, status) => {
+    try {
+      setUpdatingStatus(appointmentId);
+      const token = localStorage.getItem("token");
+      await axios.patch(
+        `${API_URL}/api/appointments/${appointmentId}/status`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Update local state
+      setAppointments(prev => 
+        prev.map(apt => 
+          apt._id === appointmentId ? { ...apt, status } : apt
+        )
+      );
+      toast.success(`Appointment ${status.toLowerCase()}`);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  // Get today's appointments
+  const today = new Date().toISOString().split("T")[0];
+  const todayAppointments = appointments.filter(apt => apt.date === today);
+  const upcomingAppointments = appointments.filter(
+    apt => apt.status === "Pending" || apt.status === "Confirmed"
+  );
+  const completedToday = todayAppointments.filter(apt => apt.status === "Completed").length;
+
+  // Get unique patients count
+  const uniquePatients = [...new Set(appointments.map(apt => apt.patientId?._id))].length;
+
+  // Get profile image for patient
+  const getPatientImage = (patient) => {
+    if (!patient) return "";
+    if (patient.profileImage) {
+      if (patient.profileImage.startsWith("http")) return patient.profileImage;
+      return `${API_URL}/${patient.profileImage}`;
+    }
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      (patient.firstName || "") + " " + (patient.lastName || "")
+    )}&background=007BFF&color=fff&size=100`;
+  };
 
   return (
     <div className={`min-h-screen ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
@@ -127,24 +178,24 @@ export default function DoctorDashboard() {
             <SummaryCard
               icon={<Users className="w-6 h-6" />}
               title="Total Patients"
-              value="248"
-              change="+12 this month"
+              value={uniquePatients.toString()}
+              change={`${appointments.length} appointments`}
               color="blue"
               darkMode={darkMode}
             />
             <SummaryCard
               icon={<Calendar className="w-6 h-6" />}
               title="Today's Appointments"
-              value="8"
-              change="3 completed"
+              value={todayAppointments.length.toString()}
+              change={`${completedToday} completed`}
               color="green"
               darkMode={darkMode}
             />
             <SummaryCard
               icon={<FileText className="w-6 h-6" />}
-              title="Pending Reports"
-              value="5"
-              change="2 urgent"
+              title="Pending"
+              value={upcomingAppointments.length.toString()}
+              change="Awaiting confirmation"
               color="orange"
               darkMode={darkMode}
             />
@@ -159,19 +210,38 @@ export default function DoctorDashboard() {
                   <Clock className="w-5 h-5 text-blue-500" />
                   Upcoming Appointments
                 </h3>
-                <button className="text-sm text-blue-500 hover:text-blue-400 font-medium">
-                  View All
+                <button 
+                  onClick={fetchAppointments}
+                  className="text-sm text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
+                >
+                  <RefreshCw className={`w-4 h-4 ${appointmentsLoading ? "animate-spin" : ""}`} />
+                  Refresh
                 </button>
               </div>
 
               <div className="space-y-3">
-                {upcomingAppointments.map((appointment) => (
-                  <AppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
-                    darkMode={darkMode}
-                  />
-                ))}
+                {appointmentsLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                  </div>
+                ) : upcomingAppointments.length === 0 ? (
+                  <div className={`text-center py-8 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No upcoming appointments</p>
+                  </div>
+                ) : (
+                  upcomingAppointments.slice(0, 5).map((appointment) => (
+                    <AppointmentCard
+                      key={appointment._id}
+                      appointment={appointment}
+                      darkMode={darkMode}
+                      getPatientImage={getPatientImage}
+                      getPatientInitials={getPatientInitials}
+                      handleStatusUpdate={handleStatusUpdate}
+                      updatingStatus={updatingStatus}
+                    />
+                  ))
+                )}
               </div>
             </div>
 
@@ -204,26 +274,26 @@ export default function DoctorDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
             <QuickStat
               icon={<Activity className="w-5 h-5 text-blue-500" />}
-              label="Avg. Consultation Time"
-              value="25 min"
+              label="Completed Today"
+              value={completedToday.toString()}
               darkMode={darkMode}
             />
             <QuickStat
               icon={<UserCheck className="w-5 h-5 text-green-500" />}
-              label="Patient Satisfaction"
-              value="98%"
+              label="Confirmed"
+              value={appointments.filter(a => a.status === "Confirmed").length.toString()}
               darkMode={darkMode}
             />
             <QuickStat
               icon={<Clock className="w-5 h-5 text-purple-500" />}
               label="Next Appointment"
-              value="9:00 AM"
+              value={upcomingAppointments.length > 0 ? upcomingAppointments[0]?.timeSlot || "N/A" : "N/A"}
               darkMode={darkMode}
             />
             <QuickStat
               icon={<TrendingUp className="w-5 h-5 text-orange-500" />}
-              label="Monthly Growth"
-              value="+15%"
+              label="Total Completed"
+              value={appointments.filter(a => a.status === "Completed").length.toString()}
               darkMode={darkMode}
             />
           </div>
@@ -259,29 +329,107 @@ function SummaryCard({ icon, title, value, change, color, darkMode }) {
 }
 
 // Appointment Card Component
-function AppointmentCard({ appointment, darkMode }) {
+function AppointmentCard({ appointment, darkMode, getPatientImage, getPatientInitials, handleStatusUpdate, updatingStatus }) {
+  const patient = appointment?.patientId;
+  const patientName = patient ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim() : "Unknown Patient";
+  
+  // Format date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  // Safe patient initials
+  const getInitials = () => {
+    if (!patient) return "?";
+    if (getPatientInitials) return getPatientInitials(patient);
+    const first = patient.firstName?.[0] || "";
+    const last = patient.lastName?.[0] || "";
+    return (first + last).toUpperCase() || "?";
+  };
+
+  // Safe patient image
+  const getImage = () => {
+    if (!patient?.profileImage) return null;
+    if (getPatientImage) return getPatientImage(patient);
+    return null;
+  };
+
+  const profileImage = getImage();
+
   return (
     <div className={`flex items-center justify-between p-4 ${darkMode ? "bg-gray-800 border-gray-700 hover:border-gray-600" : "bg-gray-50 border-gray-200 hover:border-gray-300"} border rounded-lg transition`}>
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center font-semibold text-white">
-          {appointment.avatar}
-        </div>
+        {profileImage ? (
+          <img
+            src={profileImage}
+            alt={patientName}
+            className="w-12 h-12 rounded-full object-cover"
+          />
+        ) : (
+          <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center font-semibold text-white">
+            {getInitials()}
+          </div>
+        )}
         <div>
-          <p className={`font-medium ${darkMode ? "text-white" : "text-gray-800"}`}>{appointment.patientName}</p>
-          <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{appointment.condition}</p>
+          <p className={`font-medium ${darkMode ? "text-white" : "text-gray-800"}`}>{patientName}</p>
+          <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+            {appointment?.reason || "General Consultation"}
+          </p>
         </div>
       </div>
-      <div className="text-right">
-        <p className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-600"}`}>{appointment.time}</p>
-        <span
-          className={`inline-block px-3 py-1 mt-1 rounded-full text-xs font-medium ${
-            appointment.status === "Completed"
-              ? "bg-green-500/20 text-green-500"
-              : "bg-yellow-500/20 text-yellow-600"
-          }`}
-        >
-          {appointment.status}
-        </span>
+      <div className="flex items-center gap-4">
+        <div className="text-right">
+          <p className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+            {formatDate(appointment?.date)} • {appointment?.timeSlot || ""}
+          </p>
+          <span
+            className={`inline-block px-3 py-1 mt-1 rounded-full text-xs font-medium ${
+              appointment?.status === "Completed"
+                ? "bg-green-500/20 text-green-500"
+                : appointment?.status === "Confirmed"
+                ? "bg-blue-500/20 text-blue-500"
+                : appointment?.status === "Cancelled"
+                ? "bg-red-500/20 text-red-500"
+                : "bg-yellow-500/20 text-yellow-600"
+            }`}
+          >
+            {appointment?.status || "Pending"}
+          </span>
+        </div>
+        
+        {/* Action Buttons */}
+        {appointment?.status === "Pending" && handleStatusUpdate && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleStatusUpdate(appointment._id, "Confirmed")}
+              disabled={updatingStatus === appointment?._id}
+              className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition disabled:opacity-50"
+              title="Confirm"
+            >
+              <CheckCircle className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleStatusUpdate(appointment._id, "Cancelled")}
+              disabled={updatingStatus === appointment?._id}
+              className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition disabled:opacity-50"
+              title="Cancel"
+            >
+              <XCircle className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        {appointment?.status === "Confirmed" && handleStatusUpdate && (
+          <button
+            onClick={() => handleStatusUpdate(appointment._id, "Completed")}
+            disabled={updatingStatus === appointment?._id}
+            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition disabled:opacity-50 flex items-center gap-1"
+          >
+            <CheckCircle className="w-4 h-4" />
+            Complete
+          </button>
+        )}
       </div>
     </div>
   );

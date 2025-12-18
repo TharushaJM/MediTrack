@@ -92,7 +92,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     // others  -> true
   });
 
-  // ✅ For doctors, don't auto-login (they need approval)
+  //  For doctors, don't auto-login (they need approval)
   if (role === "doctor") {
     return res.status(201).json({
       message: "Doctor registration successful! Your account is pending admin approval.",
@@ -118,7 +118,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     });
   }
 
-  // ✅ For patients, auto-login with token
+  //  For patients, auto-login with token
   const token = generateToken(newUser);
 
   res.status(201).json({
@@ -137,7 +137,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 });
 
-// ✅ LOGIN USER
+//  LOGIN USER
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   console.log("📥 Login attempt:", req.body);
@@ -154,7 +154,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Invalid email or password" });
   }
 
-  // ✅ Check if doctor is approved
+  //  Check if doctor is approved
   if (user.role === "doctor" && !user.isApproved) {
     console.log("❌ Doctor not approved yet:", email);
     return res.status(403).json({ 
@@ -174,21 +174,22 @@ export const loginUser = asyncHandler(async (req, res) => {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
-      isApproved: user.isApproved,          // 👈 important for blocking unapproved doctors in UI
+      isApproved: user.isApproved,          //  important for blocking unapproved doctors in UI
       specialization: user.specialization,  // optional but handy
       licenseNumber: user.licenseNumber,
+      profileImage: user.profileImage,      //  for displaying profile picture
     },
   });
 });
 
-// ✅ GET PROFILE
+//  GET PROFILE
 export const getProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id).select("-password");
   if (!user) return res.status(404).json({ message: "User not found" });
   res.json(user);
 });
 
-// ✅ UPDATE PROFILE (with password change)
+// UPDATE PROFILE (with password change)
 export const updateProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   if (!user) {
@@ -209,7 +210,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
   // user.specialization = req.body.specialization || user.specialization;
   // user.licenseNumber = req.body.licenseNumber || user.licenseNumber;
 
-  // ✅ Change password safely
+  //  Change password safely
   if (req.body.currentPassword && req.body.newPassword) {
     const isMatch = await user.matchPassword(req.body.currentPassword);
     if (!isMatch) {
@@ -243,6 +244,18 @@ export const getAllDoctors = asyncHandler(async (req, res) => {
   })
     .select("-password")
     .sort({ createdAt: -1 }); // newest first
+
+  res.json(doctors);
+});
+
+// ✅ GET APPROVED DOCTORS ONLY (Public - for Find Doctor page)
+export const getApprovedDoctors = asyncHandler(async (req, res) => {
+  const doctors = await User.find({
+    role: "doctor",
+    isApproved: true,
+  })
+    .select("-password")
+    .sort({ createdAt: -1 });
 
   res.json(doctors);
 });

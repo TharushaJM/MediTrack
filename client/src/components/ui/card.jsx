@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export function Card({ className, ...props }) {
   return (
     <div
-      className={cn("rounded-xl border bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition", className)}
+      className={cn("rounded-xl border bg-white dark:bg-gray-900 shadow-md hover:shadow-lg transition", className)}
       {...props}
     />
   );

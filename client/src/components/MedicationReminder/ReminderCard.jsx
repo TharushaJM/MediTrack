@@ -46,7 +46,7 @@ export default function ReminderCard({ reminder, onDelete, onToggleTaken }) {
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-5 shadow-sm"
+      className="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-xl p-5 shadow-sm"
     >
       {/* Header */}
       <div className="flex justify-between items-start">

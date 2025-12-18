@@ -115,7 +115,7 @@ export default function PatientDashboard() {
         </div>
 
         {/* Records Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -134,7 +134,7 @@ export default function PatientDashboard() {
                   onClick={() => setViewMode("simple")}
                   className={`px-4 py-2 text-sm rounded-md font-medium transition ${
                     viewMode === "simple"
-                      ? "bg-white dark:bg-gray-800 shadow text-blue-600 dark:text-blue-400"
+                      ? "bg-white dark:bg-gray-900 shadow text-blue-600 dark:text-blue-400"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100"
                   }`}
                 >
@@ -144,7 +144,7 @@ export default function PatientDashboard() {
                   onClick={() => setViewMode("chart")}
                   className={`px-4 py-2 text-sm rounded-md font-medium transition ${
                     viewMode === "chart"
-                      ? "bg-white dark:bg-gray-800 shadow text-blue-600 dark:text-blue-400"
+                      ? "bg-white dark:bg-gray-900 shadow text-blue-600 dark:text-blue-400"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100"
                   }`}
                 >
@@ -187,7 +187,7 @@ export default function PatientDashboard() {
 function StatCard({ label, value, sub, icon }) {
   return (
     <div
-      className="bg-white dark:bg-gray-800 
+      className="bg-white dark:bg-gray-900 
         border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition"
     >
       <div className="flex justify-between items-start mb-2">
@@ -207,7 +207,7 @@ function StatCard({ label, value, sub, icon }) {
 function SimpleView({ records, onDelete }) {
   if (!records.length)
     return (
-      <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center">
+      <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
             <FileText className="w-10 h-10 text-blue-500 dark:text-blue-400" />
@@ -230,7 +230,7 @@ function SimpleView({ records, onDelete }) {
       {records.map((r, i) => (
         <div
           key={r._id || i}
-          className="border border-gray-200 dark:border-gray-700 rounded-2xl p-6 bg-white dark:bg-gray-800 
+          className="border border-gray-200 dark:border-gray-700 rounded-2xl p-6 bg-white dark:bg-gray-900 
             shadow-sm hover:shadow-lg transition-all duration-200 group"
         >
           {/* Header with Date and Actions */}
@@ -337,7 +337,7 @@ function MetricBadge({ icon, label, value, color }) {
 function GraphView({ records }) {
   if (!records.length)
     return (
-      <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center">
+      <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
             <BarChart2 className="w-10 h-10 text-blue-500 dark:text-blue-400" />

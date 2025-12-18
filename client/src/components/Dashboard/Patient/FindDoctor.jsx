@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from "react";
-import { Search, Star, MapPin, Clock, Filter, ChevronDown, Stethoscope, Heart, Brain, Bone, Eye, Baby, Smile, Activity, Loader2, GraduationCap } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Star, MapPin, Clock, Filter, ChevronDown, Stethoscope, Heart, Brain, Bone, Eye, Baby, Smile, Activity, Loader2, GraduationCap, X, Calendar, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -24,6 +24,17 @@ export default function FindDoctor() {
   const [doctors, setDoctors] = useState([]);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Booking Modal State
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+  const [reason, setReason] = useState("");
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [booking, setBooking] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -74,8 +85,287 @@ export default function FindDoctor() {
     return "https://ui-avatars.com/api/?name=" + encodeURIComponent(doctor.firstName + " " + doctor.lastName) + "&background=007BFF&color=fff&size=150";
   };
 
+  // Fetch available slots when date changes
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (selectedDoctor && selectedDate) {
+        try {
+          setSlotsLoading(true);
+          const token = localStorage.getItem("token");
+          const response = await axios.get(
+            `${API_URL}/api/appointments/available-slots?doctorId=${selectedDoctor._id}&date=${selectedDate}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setAvailableSlots(response.data.availableSlots);
+        } catch (error) {
+          console.error("Error fetching slots:", error);
+          toast.error("Failed to load available slots");
+        } finally {
+          setSlotsLoading(false);
+        }
+      }
+    };
+    fetchSlots();
+  }, [selectedDoctor, selectedDate]);
+
+  // Get minimum date (today)
+  const getMinDate = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  };
+
+  // Get maximum date (30 days from now)
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+    return maxDate.toISOString().split("T")[0];
+  };
+
+  // Open booking modal
+  const openBookingModal = (doctor) => {
+    setSelectedDoctor(doctor);
+    setSelectedDate("");
+    setSelectedTime("");
+    setReason("");
+    setAvailableSlots([]);
+    setBookingSuccess(false);
+    setShowBookingModal(true);
+  };
+
+  // Close booking modal
+  const closeBookingModal = () => {
+    setShowBookingModal(false);
+    setSelectedDoctor(null);
+    setSelectedDate("");
+    setSelectedTime("");
+    setReason("");
+    setBookingSuccess(false);
+  };
+
+  // Handle booking
+  const handleBookAppointment = async () => {
+    if (!selectedDoctor || !selectedDate || !selectedTime) {
+      toast.error("Please select date and time");
+      return;
+    }
+
+    try {
+      setBooking(true);
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `${API_URL}/api/appointments/book`,
+        {
+          doctorId: selectedDoctor._id,
+          date: selectedDate,
+          timeSlot: selectedTime,
+          reason
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setBookingSuccess(true);
+      toast.success("Appointment booked successfully!");
+    } catch (error) {
+      console.error("Booking error:", error);
+      toast.error(error.response?.data?.error || "Failed to book appointment");
+    } finally {
+      setBooking(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 dark:from-gray-950 dark:to-gray-900">
+      {/* Booking Modal */}
+      {showBookingModal && selectedDoctor && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-[#007BFF] to-[#0056b3] p-6 rounded-t-2xl">
+              <button
+                onClick={closeBookingModal}
+                className="absolute top-4 right-4 text-white/80 hover:text-white transition"
+              >
+                <X size={24} />
+              </button>
+              <h2 className="text-xl font-bold text-white">Book Appointment</h2>
+              <p className="text-blue-100 text-sm">Schedule your visit</p>
+            </div>
+
+            {bookingSuccess ? (
+              /* Success State */
+              <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                  Appointment Booked!
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  Your appointment has been scheduled successfully
+                </p>
+                
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-left mb-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <img
+                      src={getProfileImage(selectedDoctor)}
+                      alt={selectedDoctor.firstName}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white">
+                        Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}
+                      </h4>
+                      <p className="text-sm text-blue-600">{selectedDoctor.specialization}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                    <div className="flex items-center gap-2">
+                      <Calendar size={14} className="text-gray-400" />
+                      {new Date(selectedDate).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                      })}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} className="text-gray-400" />
+                      {selectedTime}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={closeBookingModal}
+                  className="w-full py-3 bg-[#007BFF] hover:bg-[#0056b3] text-white font-medium rounded-xl transition"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              /* Booking Form */
+              <div className="p-6">
+                {/* Selected Doctor Info */}
+                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-6">
+                  <img
+                    src={getProfileImage(selectedDoctor)}
+                    alt={selectedDoctor.firstName}
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                  <div>
+                    <h3 className="font-semibold text-gray-800 dark:text-white">
+                      Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}
+                    </h3>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      {selectedDoctor.specialization || "General Physician"}
+                    </p>
+                    {selectedDoctor.location && (
+                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                        <MapPin size={12} /> {selectedDoctor.location}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Date Selection */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Calendar size={16} className="text-[#007BFF]" />
+                    Select Date
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value);
+                      setSelectedTime("");
+                    }}
+                    min={getMinDate()}
+                    max={getMaxDate()}
+                    className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-[#007BFF] focus:border-transparent"
+                  />
+                </div>
+
+                {/* Time Slots */}
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Clock size={16} className="text-[#007BFF]" />
+                    Select Time
+                  </label>
+
+                  {!selectedDate ? (
+                    <p className="text-gray-400 text-sm text-center py-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                      Please select a date first
+                    </p>
+                  ) : slotsLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#007BFF]" />
+                    </div>
+                  ) : availableSlots.length === 0 ? (
+                    <div className="text-center py-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                      <AlertCircle className="w-8 h-8 text-orange-400 mx-auto mb-2" />
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
+                        No slots available for this date
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {availableSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          onClick={() => setSelectedTime(slot)}
+                          className={`py-2 px-3 rounded-lg text-sm font-medium transition ${
+                            selectedTime === slot
+                              ? "bg-[#007BFF] text-white"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-600"
+                          }`}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Reason */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <FileText size={16} className="text-[#007BFF]" />
+                    Reason (Optional)
+                  </label>
+                  <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Describe your symptoms or reason..."
+                    rows={3}
+                    className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent resize-none"
+                  />
+                </div>
+
+                {/* Book Button */}
+                <button
+                  onClick={handleBookAppointment}
+                  disabled={!selectedDate || !selectedTime || booking}
+                  className="w-full py-3 bg-[#28A745] hover:bg-[#218838] disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition flex items-center justify-center gap-2"
+                >
+                  {booking ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Booking...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={20} />
+                      Confirm Booking
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="relative bg-gradient-to-r from-[#007BFF] to-[#0056b3] dark:from-gray-900 dark:to-gray-800 pb-32">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white"></div>
@@ -89,7 +379,7 @@ export default function FindDoctor() {
             </p>
           </div>
           <div className="max-w-4xl mx-auto relative z-10">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-2 flex flex-col md:flex-row gap-2">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-2 flex flex-col md:flex-row gap-2">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
@@ -109,7 +399,7 @@ export default function FindDoctor() {
                   <ChevronDown size={18} className={isDropdownOpen ? "rotate-180" : ""} />
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] w-[280px] max-h-[400px] overflow-y-auto">
+                  <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] w-[280px] max-h-[400px] overflow-y-auto">
                     {specializations.map((spec) => (
                       <button key={spec.name} onClick={() => { setSelectedSpecialization(spec.name); setIsDropdownOpen(false); }}
                         className={"w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 text-left transition-colors " + (selectedSpecialization === spec.name ? "bg-blue-50 dark:bg-gray-700 text-[#007BFF]" : "text-gray-700 dark:text-gray-300")}>
@@ -142,7 +432,7 @@ export default function FindDoctor() {
             {filteredDoctors.map((doctor) => (
               <div
                 key={doctor._id}
-                className="group bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:-translate-y-1"
+                className="group bg-white dark:bg-gray-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:-translate-y-1"
               >
                 {/* Card Header with Gradient */}
                 <div className="h-20 bg-gradient-to-r from-[#007BFF] to-[#0056b3] dark:from-gray-700 dark:to-gray-600 relative">
@@ -207,7 +497,7 @@ export default function FindDoctor() {
 
                   {/* Book Button */}
                   <button 
-                    onClick={() => toast.success("Booking with " + (doctor.title || "Dr.") + " " + doctor.firstName + " " + doctor.lastName)}
+                    onClick={() => openBookingModal(doctor)}
                     className="w-full py-3 bg-[#28A745] hover:bg-[#218838] text-white font-semibold rounded-xl transition-all hover:shadow-lg group-hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Book Appointment

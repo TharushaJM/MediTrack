@@ -44,7 +44,7 @@ export default function AddReminderForm({ onClose, onCreated }) {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg p-6 relative"
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-lg p-6 relative"
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-4 border-b pb-3">

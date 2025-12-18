@@ -9,6 +9,7 @@ import {
   updateProfile,
   getPendingDoctors,
   getAllDoctors,
+  getApprovedDoctors,
   getAllPatients,
   approveDoctor,
   rejectDoctor,
@@ -43,6 +44,7 @@ const upload = multer({
 // Public routes
 router.post("/register", upload.single("profileImage"), registerUser);
 router.post("/login", loginUser);
+router.get("/doctors/approved", getApprovedDoctors); // Public - For Find Doctor page
 
 // Protected user routes
 router.get("/profile", protect, getProfile);
