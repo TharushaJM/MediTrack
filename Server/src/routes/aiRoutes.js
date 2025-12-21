@@ -37,6 +37,7 @@ async function safeGeminiAI(prompt) {
         }),
       }
     );
+    
 
     const data = await response.json();
     

@@ -227,7 +227,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-// ✅ GET PENDING DOCTORS (for admin approval)
+//  GET PENDING DOCTORS (for admin approval)
 export const getPendingDoctors = asyncHandler(async (req, res) => {
   const pendingDoctors = await User.find({
     role: "doctor",
@@ -237,7 +237,7 @@ export const getPendingDoctors = asyncHandler(async (req, res) => {
   res.json(pendingDoctors);
 });
 
-// ✅ GET ALL DOCTORS (approved + pending)
+//  GET ALL DOCTORS (approved + pending)
 export const getAllDoctors = asyncHandler(async (req, res) => {
   const doctors = await User.find({
     role: "doctor",
@@ -248,7 +248,7 @@ export const getAllDoctors = asyncHandler(async (req, res) => {
   res.json(doctors);
 });
 
-// ✅ GET APPROVED DOCTORS ONLY (Public - for Find Doctor page)
+//  GET APPROVED DOCTORS ONLY (Public - for Find Doctor page)
 export const getApprovedDoctors = asyncHandler(async (req, res) => {
   const doctors = await User.find({
     role: "doctor",
@@ -260,7 +260,7 @@ export const getApprovedDoctors = asyncHandler(async (req, res) => {
   res.json(doctors);
 });
 
-// ✅ GET ALL PATIENTS
+//  GET ALL PATIENTS
 export const getAllPatients = asyncHandler(async (req, res) => {
   const patients = await User.find({
     role: "patient",
@@ -271,7 +271,7 @@ export const getAllPatients = asyncHandler(async (req, res) => {
   res.json(patients);
 });
 
-// ✅ APPROVE DOCTOR
+//  APPROVE DOCTOR
 export const approveDoctor = asyncHandler(async (req, res) => {
   const doctor = await User.findById(req.params.id);
 
@@ -301,7 +301,7 @@ export const approveDoctor = asyncHandler(async (req, res) => {
   });
 });
 
-// ✅ REJECT DOCTOR
+//  REJECT DOCTOR
 export const rejectDoctor = asyncHandler(async (req, res) => {
   const doctor = await User.findById(req.params.id);
 

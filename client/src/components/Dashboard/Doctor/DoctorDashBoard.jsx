@@ -27,6 +27,7 @@ import DoctorSidebar from "./DoctorSidebar";
 import DoctorHeader from "./DoctorHeader";
 import DoctorProfile from "./DoctorProfile";
 import { useTheme } from "../../../context/ThemeContext";
+import DoctorPatients from "./DoctorPatients";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -55,9 +56,12 @@ export default function DoctorDashboard() {
     try {
       setAppointmentsLoading(true);
       const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_URL}/api/appointments/doctor-appointments`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${API_URL}/api/appointments/doctor-appointments`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setAppointments(res.data || []);
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -80,7 +84,7 @@ export default function DoctorDashboard() {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        
+
         // Fetch doctor profile
         const profileRes = await axios.get(`${API_URL}/api/users/profile`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -88,9 +92,12 @@ export default function DoctorDashboard() {
         setDoctor(profileRes.data);
 
         // Fetch doctor's appointments
-        const appointmentsRes = await axios.get(`${API_URL}/api/appointments/doctor-appointments`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const appointmentsRes = await axios.get(
+          `${API_URL}/api/appointments/doctor-appointments`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setAppointments(appointmentsRes.data || []);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -116,10 +123,10 @@ export default function DoctorDashboard() {
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       // Update local state
-      setAppointments(prev => 
-        prev.map(apt => 
+      setAppointments((prev) =>
+        prev.map((apt) =>
           apt._id === appointmentId ? { ...apt, status } : apt
         )
       );
@@ -134,14 +141,18 @@ export default function DoctorDashboard() {
 
   // Get today's appointments
   const today = new Date().toISOString().split("T")[0];
-  const todayAppointments = appointments.filter(apt => apt.date === today);
+  const todayAppointments = appointments.filter((apt) => apt.date === today);
   const upcomingAppointments = appointments.filter(
-    apt => apt.status === "Pending" || apt.status === "Confirmed"
+    (apt) => apt.status === "Pending" || apt.status === "Confirmed"
   );
-  const completedToday = todayAppointments.filter(apt => apt.status === "Completed").length;
+  const completedToday = todayAppointments.filter(
+    (apt) => apt.status === "Completed"
+  ).length;
 
   // Get unique patients count
-  const uniquePatients = [...new Set(appointments.map(apt => apt.patientId?._id))].length;
+  const uniquePatients = [
+    ...new Set(appointments.map((apt) => apt.patientId?._id)),
+  ].length;
 
   // Get profile image for patient
   const getPatientImage = (patient) => {
@@ -157,8 +168,6 @@ export default function DoctorDashboard() {
 
   return (
     <div className={`min-h-screen ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
-     
-      
       {/* Sidebar */}
       <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
@@ -170,134 +179,185 @@ export default function DoctorDashboard() {
         {/* Render Profile or Dashboard Content */}
         {activeMenu === "profile" ? (
           <DoctorProfile />
+        ) : activeMenu === "patients" ? (
+          <DoctorPatients />
         ) : (
-        <main className="p-8">
+          <main className="p-8">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <SummaryCard
+                icon={<Users className="w-6 h-6" />}
+                title="Total Patients"
+                value={uniquePatients.toString()}
+                change={`${appointments.length} appointments`}
+                color="blue"
+                darkMode={darkMode}
+              />
+              <SummaryCard
+                icon={<Calendar className="w-6 h-6" />}
+                title="Today's Appointments"
+                value={todayAppointments.length.toString()}
+                change={`${completedToday} completed`}
+                color="green"
+                darkMode={darkMode}
+              />
+              <SummaryCard
+                icon={<FileText className="w-6 h-6" />}
+                title="Pending"
+                value={upcomingAppointments.length.toString()}
+                change="Awaiting confirmation"
+                color="orange"
+                darkMode={darkMode}
+              />
+            </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <SummaryCard
-              icon={<Users className="w-6 h-6" />}
-              title="Total Patients"
-              value={uniquePatients.toString()}
-              change={`${appointments.length} appointments`}
-              color="blue"
-              darkMode={darkMode}
-            />
-            <SummaryCard
-              icon={<Calendar className="w-6 h-6" />}
-              title="Today's Appointments"
-              value={todayAppointments.length.toString()}
-              change={`${completedToday} completed`}
-              color="green"
-              darkMode={darkMode}
-            />
-            <SummaryCard
-              icon={<FileText className="w-6 h-6" />}
-              title="Pending"
-              value={upcomingAppointments.length.toString()}
-              change="Awaiting confirmation"
-              color="orange"
-              darkMode={darkMode}
-            />
-          </div>
-
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Upcoming Appointments - Takes 2 columns */}
-            <div className={`lg:col-span-2 ${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"} border rounded-xl p-6 shadow-sm`}>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-800"} flex items-center gap-2`}>
-                  <Clock className="w-5 h-5 text-blue-500" />
-                  Upcoming Appointments
-                </h3>
-                <button 
-                  onClick={fetchAppointments}
-                  className="text-sm text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
-                >
-                  <RefreshCw className={`w-4 h-4 ${appointmentsLoading ? "animate-spin" : ""}`} />
-                  Refresh
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {appointmentsLoading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-                  </div>
-                ) : upcomingAppointments.length === 0 ? (
-                  <div className={`text-center py-8 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No upcoming appointments</p>
-                  </div>
-                ) : (
-                  upcomingAppointments.slice(0, 5).map((appointment) => (
-                    <AppointmentCard
-                      key={appointment._id}
-                      appointment={appointment}
-                      darkMode={darkMode}
-                      getPatientImage={getPatientImage}
-                      getPatientInitials={getPatientInitials}
-                      handleStatusUpdate={handleStatusUpdate}
-                      updatingStatus={updatingStatus}
+            {/* Main Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Upcoming Appointments - Takes 2 columns */}
+              <div
+                className={`lg:col-span-2 ${
+                  darkMode
+                    ? "bg-gray-900 border-gray-800"
+                    : "bg-white border-gray-200"
+                } border rounded-xl p-6 shadow-sm`}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3
+                    className={`text-lg font-semibold ${
+                      darkMode ? "text-white" : "text-gray-800"
+                    } flex items-center gap-2`}
+                  >
+                    <Clock className="w-5 h-5 text-blue-500" />
+                    Upcoming Appointments
+                  </h3>
+                  <button
+                    onClick={fetchAppointments}
+                    className="text-sm text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${
+                        appointmentsLoading ? "animate-spin" : ""
+                      }`}
                     />
-                  ))
-                )}
+                    Refresh
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {appointmentsLoading ? (
+                    <div className="flex justify-center items-center py-8">
+                      <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                    </div>
+                  ) : upcomingAppointments.length === 0 ? (
+                    <div
+                      className={`text-center py-8 ${
+                        darkMode ? "text-gray-400" : "text-gray-500"
+                      }`}
+                    >
+                      <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No upcoming appointments</p>
+                    </div>
+                  ) : (
+                    upcomingAppointments
+                      .slice(0, 5)
+                      .map((appointment) => (
+                        <AppointmentCard
+                          key={appointment._id}
+                          appointment={appointment}
+                          darkMode={darkMode}
+                          getPatientImage={getPatientImage}
+                          getPatientInitials={getPatientInitials}
+                          handleStatusUpdate={handleStatusUpdate}
+                          updatingStatus={updatingStatus}
+                        />
+                      ))
+                  )}
+                </div>
+              </div>
+
+              {/* Weekly Patient Visits Chart */}
+              <div
+                className={`${
+                  darkMode
+                    ? "bg-gray-900 border-gray-800"
+                    : "bg-white border-gray-200"
+                } border rounded-xl p-6 shadow-sm`}
+              >
+                <h3
+                  className={`text-lg font-semibold ${
+                    darkMode ? "text-white" : "text-gray-800"
+                  } mb-6 flex items-center gap-2`}
+                >
+                  <TrendingUp className="w-5 h-5 text-green-500" />
+                  Weekly Visits
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={weeklyVisits}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={darkMode ? "#374151" : "#E5E7EB"}
+                    />
+                    <XAxis
+                      dataKey="day"
+                      stroke={darkMode ? "#9CA3AF" : "#6B7280"}
+                    />
+                    <YAxis stroke={darkMode ? "#9CA3AF" : "#6B7280"} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: darkMode ? "#1F2937" : "#FFFFFF",
+                        border: darkMode
+                          ? "1px solid #374151"
+                          : "1px solid #E5E7EB",
+                        borderRadius: "8px",
+                        color: darkMode ? "#F3F4F6" : "#1F2937",
+                      }}
+                    />
+                    <Bar
+                      dataKey="visits"
+                      fill="#3B82F6"
+                      radius={[8, 8, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Weekly Patient Visits Chart */}
-            <div className={`${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"} border rounded-xl p-6 shadow-sm`}>
-              <h3 className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-800"} mb-6 flex items-center gap-2`}>
-                <TrendingUp className="w-5 h-5 text-green-500" />
-                Weekly Visits
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={weeklyVisits}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "#374151" : "#E5E7EB"} />
-                  <XAxis dataKey="day" stroke={darkMode ? "#9CA3AF" : "#6B7280"} />
-                  <YAxis stroke={darkMode ? "#9CA3AF" : "#6B7280"} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: darkMode ? "#1F2937" : "#FFFFFF",
-                      border: darkMode ? "1px solid #374151" : "1px solid #E5E7EB",
-                      borderRadius: "8px",
-                      color: darkMode ? "#F3F4F6" : "#1F2937",
-                    }}
-                  />
-                  <Bar dataKey="visits" fill="#3B82F6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            {/* Quick Stats Row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+              <QuickStat
+                icon={<Activity className="w-5 h-5 text-blue-500" />}
+                label="Completed Today"
+                value={completedToday.toString()}
+                darkMode={darkMode}
+              />
+              <QuickStat
+                icon={<UserCheck className="w-5 h-5 text-green-500" />}
+                label="Confirmed"
+                value={appointments
+                  .filter((a) => a.status === "Confirmed")
+                  .length.toString()}
+                darkMode={darkMode}
+              />
+              <QuickStat
+                icon={<Clock className="w-5 h-5 text-purple-500" />}
+                label="Next Appointment"
+                value={
+                  upcomingAppointments.length > 0
+                    ? upcomingAppointments[0]?.timeSlot || "N/A"
+                    : "N/A"
+                }
+                darkMode={darkMode}
+              />
+              <QuickStat
+                icon={<TrendingUp className="w-5 h-5 text-orange-500" />}
+                label="Total Completed"
+                value={appointments
+                  .filter((a) => a.status === "Completed")
+                  .length.toString()}
+                darkMode={darkMode}
+              />
             </div>
-          </div>
-
-          {/* Quick Stats Row */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
-            <QuickStat
-              icon={<Activity className="w-5 h-5 text-blue-500" />}
-              label="Completed Today"
-              value={completedToday.toString()}
-              darkMode={darkMode}
-            />
-            <QuickStat
-              icon={<UserCheck className="w-5 h-5 text-green-500" />}
-              label="Confirmed"
-              value={appointments.filter(a => a.status === "Confirmed").length.toString()}
-              darkMode={darkMode}
-            />
-            <QuickStat
-              icon={<Clock className="w-5 h-5 text-purple-500" />}
-              label="Next Appointment"
-              value={upcomingAppointments.length > 0 ? upcomingAppointments[0]?.timeSlot || "N/A" : "N/A"}
-              darkMode={darkMode}
-            />
-            <QuickStat
-              icon={<TrendingUp className="w-5 h-5 text-orange-500" />}
-              label="Total Completed"
-              value={appointments.filter(a => a.status === "Completed").length.toString()}
-              darkMode={darkMode}
-            />
-          </div>
-        </main>
+          </main>
         )}
       </div>
     </div>
@@ -313,7 +373,13 @@ function SummaryCard({ icon, title, value, change, color, darkMode }) {
   };
 
   return (
-    <div className={`${darkMode ? "bg-gray-900 border-gray-800 hover:border-gray-700" : "bg-white border-gray-200 hover:border-gray-300"} border rounded-xl p-6 transition shadow-sm`}>
+    <div
+      className={`${
+        darkMode
+          ? "bg-gray-900 border-gray-800 hover:border-gray-700"
+          : "bg-white border-gray-200 hover:border-gray-300"
+      } border rounded-xl p-6 transition shadow-sm`}
+    >
       <div className="flex items-center justify-between mb-4">
         <div
           className={`p-3 bg-gradient-to-br ${colors[color]} rounded-lg shadow-lg`}
@@ -321,18 +387,41 @@ function SummaryCard({ icon, title, value, change, color, darkMode }) {
           {icon}
         </div>
       </div>
-      <h3 className={`${darkMode ? "text-gray-400" : "text-gray-500"} text-sm mb-1`}>{title}</h3>
-      <p className={`text-3xl font-bold ${darkMode ? "text-white" : "text-gray-800"} mb-1`}>{value}</p>
-      <p className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>{change}</p>
+      <h3
+        className={`${
+          darkMode ? "text-gray-400" : "text-gray-500"
+        } text-sm mb-1`}
+      >
+        {title}
+      </h3>
+      <p
+        className={`text-3xl font-bold ${
+          darkMode ? "text-white" : "text-gray-800"
+        } mb-1`}
+      >
+        {value}
+      </p>
+      <p className={`text-xs ${darkMode ? "text-gray-500" : "text-gray-400"}`}>
+        {change}
+      </p>
     </div>
   );
 }
 
 // Appointment Card Component
-function AppointmentCard({ appointment, darkMode, getPatientImage, getPatientInitials, handleStatusUpdate, updatingStatus }) {
+function AppointmentCard({
+  appointment,
+  darkMode,
+  getPatientImage,
+  getPatientInitials,
+  handleStatusUpdate,
+  updatingStatus,
+}) {
   const patient = appointment?.patientId;
-  const patientName = patient ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim() : "Unknown Patient";
-  
+  const patientName = patient
+    ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim()
+    : "Unknown Patient";
+
   // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -359,7 +448,13 @@ function AppointmentCard({ appointment, darkMode, getPatientImage, getPatientIni
   const profileImage = getImage();
 
   return (
-    <div className={`flex items-center justify-between p-4 ${darkMode ? "bg-gray-800 border-gray-700 hover:border-gray-600" : "bg-gray-50 border-gray-200 hover:border-gray-300"} border rounded-lg transition`}>
+    <div
+      className={`flex items-center justify-between p-4 ${
+        darkMode
+          ? "bg-gray-800 border-gray-700 hover:border-gray-600"
+          : "bg-gray-50 border-gray-200 hover:border-gray-300"
+      } border rounded-lg transition`}
+    >
       <div className="flex items-center gap-4">
         {profileImage ? (
           <img
@@ -373,15 +468,29 @@ function AppointmentCard({ appointment, darkMode, getPatientImage, getPatientIni
           </div>
         )}
         <div>
-          <p className={`font-medium ${darkMode ? "text-white" : "text-gray-800"}`}>{patientName}</p>
-          <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          <p
+            className={`font-medium ${
+              darkMode ? "text-white" : "text-gray-800"
+            }`}
+          >
+            {patientName}
+          </p>
+          <p
+            className={`text-sm ${
+              darkMode ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
             {appointment?.reason || "General Consultation"}
           </p>
         </div>
       </div>
       <div className="flex items-center gap-4">
         <div className="text-right">
-          <p className={`text-sm font-medium ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
+          <p
+            className={`text-sm font-medium ${
+              darkMode ? "text-gray-300" : "text-gray-600"
+            }`}
+          >
             {formatDate(appointment?.date)} • {appointment?.timeSlot || ""}
           </p>
           <span
@@ -398,7 +507,7 @@ function AppointmentCard({ appointment, darkMode, getPatientImage, getPatientIni
             {appointment?.status || "Pending"}
           </span>
         </div>
-        
+
         {/* Action Buttons */}
         {appointment?.status === "Pending" && handleStatusUpdate && (
           <div className="flex gap-2">
@@ -438,12 +547,26 @@ function AppointmentCard({ appointment, darkMode, getPatientImage, getPatientIni
 // Quick Stat Component
 function QuickStat({ icon, label, value, darkMode }) {
   return (
-    <div className={`${darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"} border rounded-xl p-4 shadow-sm`}>
+    <div
+      className={`${
+        darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
+      } border rounded-xl p-4 shadow-sm`}
+    >
       <div className="flex items-center gap-3 mb-2">
         {icon}
-        <span className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>{label}</span>
+        <span
+          className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}
+        >
+          {label}
+        </span>
       </div>
-      <p className={`text-xl font-bold ${darkMode ? "text-white" : "text-gray-800"}`}>{value}</p>
+      <p
+        className={`text-xl font-bold ${
+          darkMode ? "text-white" : "text-gray-800"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
