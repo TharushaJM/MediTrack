@@ -1,5 +1,16 @@
 import { NavLink, useNavigate, Link } from "react-router-dom";
-import { LayoutDashboard, FileText, User, LogOut, AlarmClock, Brain, Activity, Stethoscope, CalendarCheck } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  User,
+  LogOut,
+  AlarmClock,
+  Brain,
+  Activity,
+  Stethoscope,
+  CalendarCheck,
+  MessageSquare,
+} from "lucide-react";
 import DashboardHeader from "./DashboardHeader";
 import { useState, useEffect } from "react";
 
@@ -70,16 +81,18 @@ export default function DashboardLayout({ children }) {
               text="My Appointments"
             />
             <NavItem
+              to="/chat"
+              icon={<MessageSquare size={20} />}
+              text="Chat"
+            />
+
+            <NavItem
               to="/reminders"
               icon={<AlarmClock size={20} />}
               text="Reminders"
             />
 
-            <NavItem 
-              to="/profile" 
-              icon={<User size={20} />} 
-              text="Profile" 
-            />
+            <NavItem to="/profile" icon={<User size={20} />} text="Profile" />
           </nav>
         </div>
 
@@ -89,7 +102,10 @@ export default function DashboardLayout({ children }) {
             onClick={handleLogout}
             className="flex items-center gap-3 px-6 py-4 text-sm text-white/90 hover:bg-blue-600 dark:hover:bg-gray-800 transition-all w-full group"
           >
-            <LogOut size={18} className="group-hover:scale-110 transition-transform" />
+            <LogOut
+              size={18}
+              className="group-hover:scale-110 transition-transform"
+            />
             <span className="font-medium">Logout</span>
           </button>
         </div>
@@ -98,7 +114,9 @@ export default function DashboardLayout({ children }) {
       {/* Main Content - With margin for sidebar */}
       <div className="flex-1 flex flex-col ml-64 h-screen">
         <DashboardHeader />
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
@@ -116,9 +134,7 @@ function NavItem({ to, icon, text }) {
         }`
       }
     >
-      <span className={`transition-transform duration-200`}>
-        {icon}
-      </span>
+      <span className={`transition-transform duration-200`}>{icon}</span>
       <span>{text}</span>
     </NavLink>
   );

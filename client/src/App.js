@@ -19,6 +19,7 @@ import FindDoctor from "./components/Dashboard/Patient/FindDoctor";
 import BookAppointment from "./components/Dashboard/Patient/BookAppointment";
 import MyAppointments from "./components/Dashboard/Patient/MyAppointments";
 import ProtectedRoute from "./components/ProtectedRoute";
+import PatientChat from "./components/Dashboard/Patient/PatientChat";
 
 //  This wrapper helps control where Navbar appears
 function LayoutWrapper({ children }) {
@@ -39,7 +40,8 @@ function LayoutWrapper({ children }) {
     "/choose-role",
     "/register/patient",
     "/register/doctor",
-    "/login"
+    "/login",
+    "/chat",
   ];
 
   const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
@@ -61,13 +63,13 @@ export default function App() {
           {/* Public Pages (with Navbar) */}
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          
+
           {/* Registration Flow */}
           <Route path="/choose-role" element={<RoleSelection />} />
           <Route path="/register/patient" element={<PatientRegister />} />
           <Route path="/register/doctor" element={<DoctorRegister />} />
           <Route path="/register" element={<Register />} />
-          
+
           {/* Admin Dashboard - Admin Only */}
           <Route
             path="/admin"
@@ -139,6 +141,17 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute patientOnly={true}>
+                <DashboardLayout>
+                  <PatientChat />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/my-appointments"
             element={

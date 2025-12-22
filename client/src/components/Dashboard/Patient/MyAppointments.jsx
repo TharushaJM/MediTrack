@@ -4,28 +4,28 @@ import {
   Clock,
   MapPin,
   MessageCircle,
-  Phone,
-  Video,
   CheckCircle,
   XCircle,
   AlertCircle,
   Loader2,
-  ChevronDown,
-  Filter,
   RefreshCw,
   Stethoscope,
   Mail,
+  // Phone, Video, (Kept imports just in case you uncomment later)
 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom"; 
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function MyAppointments() {
+  const navigate = useNavigate();
+  
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all"); // all, upcoming, completed, cancelled
+  const [filter, setFilter] = useState("all");
   const [showContactModal, setShowContactModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [cancelling, setCancelling] = useState(null);
@@ -85,29 +85,25 @@ export default function MyAppointments() {
       case "Pending":
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
-            <AlertCircle size={12} />
-            Pending
+            <AlertCircle size={12} /> Pending
           </span>
         );
       case "Confirmed":
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-            <CheckCircle size={12} />
-            Confirmed
+            <CheckCircle size={12} /> Confirmed
           </span>
         );
       case "Completed":
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-            <CheckCircle size={12} />
-            Completed
+            <CheckCircle size={12} /> Completed
           </span>
         );
       case "Cancelled":
         return (
           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-            <XCircle size={12} />
-            Cancelled
+            <XCircle size={12} /> Cancelled
           </span>
         );
       default:
@@ -304,7 +300,7 @@ export default function MyAppointments() {
                   </div>
                 </div>
 
-                {/* Reason (if any) */}
+                {/* Reason */}
                 {appointment.reason && (
                   <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -324,7 +320,7 @@ export default function MyAppointments() {
                     Contact Doctor
                   </button>
 
-                  {/* Cancel Button (only for pending/confirmed appointments) */}
+                  {/* Cancel Button */}
                   {(appointment.status === "Pending" || appointment.status === "Confirmed") &&
                     isUpcoming(appointment.date) && (
                       <button
@@ -378,10 +374,11 @@ export default function MyAppointments() {
               </h3>
 
               <div className="space-y-3">
-                {/* Chat */}
+                
+                {/* 1. Chat */}
                 <button
                   onClick={() => {
-                    toast.success("Chat feature coming soon!");
+                    navigate(`/patient/chat/${selectedAppointment.doctorId._id}`);
                     setShowContactModal(false);
                   }}
                   className="w-full flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl transition group"
@@ -397,8 +394,8 @@ export default function MyAppointments() {
                   </div>
                 </button>
 
-                {/* Video Call */}
-                <button
+                {/* 2. Video Call (COMMENTED OUT 🔒) */}
+                {/* <button
                   onClick={() => {
                     toast.success("Video call feature coming soon!");
                     setShowContactModal(false);
@@ -414,10 +411,11 @@ export default function MyAppointments() {
                       Start a video consultation
                     </p>
                   </div>
-                </button>
+                </button> 
+                */}
 
-                {/* Phone Call */}
-                <button
+                {/* 3. Phone Call (COMMENTED OUT 🔒) */}
+                {/* <button
                   onClick={() => {
                     toast.success("Phone call feature coming soon!");
                     setShowContactModal(false);
@@ -433,9 +431,10 @@ export default function MyAppointments() {
                       Call your doctor directly
                     </p>
                   </div>
-                </button>
+                </button> 
+                */}
 
-                {/* Email */}
+                {/* 4. Email */}
                 {selectedAppointment.doctorId?.email && (
                   <a
                     href={`mailto:${selectedAppointment.doctorId.email}`}

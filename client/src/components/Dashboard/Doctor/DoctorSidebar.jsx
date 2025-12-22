@@ -6,7 +6,7 @@ import {
   Settings,
   LogOut,
   UserCircle,
-  MessageSquare, 
+  MessageSquare,
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
@@ -63,12 +63,7 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
             active={activeMenu === "appointments"}
             onClick={() => setActiveMenu("appointments")}
           />
-          <NavItem
-            icon={<MessageSquare size={20} />}
-            text="Chat"
-            active={activeMenu === "chat"}
-            onClick={() => setActiveMenu("chat")}
-          />
+          <NavItem to="/chat" icon={<MessageSquare size={20} />} text="Chat" />
 
           <NavItem
             icon={<FileText size={20} />}
