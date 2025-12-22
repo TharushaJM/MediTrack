@@ -142,7 +142,7 @@ export default function App() {
             }
           />
           <Route
-            path="/chat"
+            path="/patient/chat/:doctorId"
             element={
               <ProtectedRoute patientOnly={true}>
                 <DashboardLayout>

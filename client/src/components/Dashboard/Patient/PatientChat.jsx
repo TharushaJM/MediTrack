@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Send } from "lucide-react";
+import { useParams,useNavigate } from "react-router-dom";
 
 const API = "http://localhost:5000";
 
-export default function PatientChat({ doctorId, onBack }) {
+export default function PatientChat({ doctorId: propDoctorId, onBack }) {
+  const navigate = useNavigate();
+  const { doctorId: paramDoctorId } = useParams();
+
+  
+  const doctorId = (propDoctorId || paramDoctorId || "").toString();
   const rawToken = localStorage.getItem("token") || "";
   const token = rawToken.replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "").trim();
 
