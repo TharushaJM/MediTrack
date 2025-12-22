@@ -2,6 +2,8 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 export const protect = async (req, res, next) => {
+  let token; // 
+
   try {
     const auth = req.headers.authorization;
 
@@ -9,16 +11,30 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "Not authorized, no token" });
     }
 
-    const token = auth.split(" ")[1];
+    // Assign value to the declared variable
+    token = auth.split(" ")[1];
+
+    // ✅ Clean token (remove quotes/spaces)
+    token = (token || "")
+      .replace(/^"+|"+$/g, "")
+      .replace(/^'+|'+$/g, "")
+      .trim();
+
+    if (!token) {
+      return res.status(401).json({ message: "Not authorized, token missing" });
+    }
 
     // Verify token signature + expiry
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Attach user to request (without password)
-    const user = await User.findById(decoded.id).select("-password");
+    // Note: Ensure your JWT payload uses "id". If you signed with "userId", change this to decoded.userId
+    const user = await User.findById(decoded.id || decoded.userId).select("-password");
 
     if (!user) {
-      return res.status(401).json({ message: "Not authorized, user not found" });
+      return res
+        .status(401)
+        .json({ message: "Not authorized, user not found" });
     }
 
     req.user = user;
@@ -42,6 +58,7 @@ export const doctorOnly = (req, res, next) => {
   }
   next();
 };
+
 export const approvedDoctorOnly = (req, res, next) => {
   // 1) must be logged in (protect already does that)
   // 2) must be a doctor

@@ -13,7 +13,6 @@ import {
   MessageSquare,
 } from "lucide-react";
 
-
 const API = "http://localhost:5000";
 
 function StatusBadge({ status }) {
@@ -24,17 +23,24 @@ function StatusBadge({ status }) {
 
   if (s === "pending") cls += "bg-amber-50 text-amber-700 border-amber-200";
   else if (s === "confirmed") cls += "bg-blue-50 text-blue-700 border-blue-200";
-  else if (s === "completed") cls += "bg-green-50 text-green-700 border-green-200";
+  else if (s === "completed")
+    cls += "bg-green-50 text-green-700 border-green-200";
   else if (s === "cancelled" || s === "canceled")
     cls += "bg-red-50 text-red-700 border-red-200";
   else cls += "bg-gray-50 text-gray-700 border-gray-200";
 
   const icon =
-    s === "pending" ? <Clock className="w-3 h-3" /> :
-    s === "confirmed" ? <BadgeCheck className="w-3 h-3" /> :
-    s === "completed" ? <BadgeCheck className="w-3 h-3" /> :
-    s === "cancelled" || s === "canceled" ? <AlertCircle className="w-3 h-3" /> :
-    <Calendar className="w-3 h-3" />;
+    s === "pending" ? (
+      <Clock className="w-3 h-3" />
+    ) : s === "confirmed" ? (
+      <BadgeCheck className="w-3 h-3" />
+    ) : s === "completed" ? (
+      <BadgeCheck className="w-3 h-3" />
+    ) : s === "cancelled" || s === "canceled" ? (
+      <AlertCircle className="w-3 h-3" />
+    ) : (
+      <Calendar className="w-3 h-3" />
+    );
 
   return (
     <span className={cls}>
@@ -46,7 +52,6 @@ function StatusBadge({ status }) {
 
 function Panel({ title, subtitle, icon: Icon, children }) {
   return (
-    
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden">
       <div className="p-5 border-b dark:border-gray-800">
         <div className="flex items-start gap-3">
@@ -70,7 +75,7 @@ function Panel({ title, subtitle, icon: Icon, children }) {
   );
 }
 
-export default function DoctorPatients() {
+export default function DoctorPatients({ onOpenChat }) {
   const [patients, setPatients] = useState([]); // items from /api/doctor/patients
   const [selected, setSelected] = useState(null); // {patient, lastAppointment, totalAppointments...}
   const [patientDetails, setPatientDetails] = useState(null); // {patient, appointments}
@@ -81,7 +86,11 @@ export default function DoctorPatients() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all"); // all | recent | pending | completed
 
-  const token = localStorage.getItem("token");
+  const rawToken = localStorage.getItem("token") || "";
+  const token = rawToken
+    .replace(/^"+|"+$/g, "")
+    .replace(/^'+|'+$/g, "")
+    .trim();
 
   const fetchPatients = async () => {
     setError("");
@@ -104,12 +113,16 @@ export default function DoctorPatients() {
     setError("");
     setLoadingDetails(true);
     try {
-      const { data } = await axios.get(`${API}/api/doctor/patients/${patientId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.get(
+        `${API}/api/doctor/patients/${patientId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setPatientDetails(data);
     } catch (e) {
-      const msg = e?.response?.data?.message || "Failed to load patient details";
+      const msg =
+        e?.response?.data?.message || "Failed to load patient details";
       setError(msg);
       setPatientDetails(null);
     } finally {
@@ -135,9 +148,12 @@ export default function DoctorPatients() {
       });
     }
 
-    if (filter === "pending") list = list.filter((x) => (x.pendingCount || 0) > 0);
+    if (filter === "pending")
+      list = list.filter((x) => (x.pendingCount || 0) > 0);
     if (filter === "completed")
-      list = list.filter((x) => (x.lastAppointment?.status || "").toLowerCase() === "completed");
+      list = list.filter(
+        (x) => (x.lastAppointment?.status || "").toLowerCase() === "completed"
+      );
     if (filter === "recent") {
       // already sorted from server by createdAt desc, so just keep as-is
       // (optional: slice)
@@ -171,7 +187,8 @@ export default function DoctorPatients() {
                 My Patients
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Only patients who booked at least one appointment with you will appear here.
+                Only patients who booked at least one appointment with you will
+                appear here.
               </p>
             </div>
           </div>
@@ -242,7 +259,8 @@ export default function DoctorPatients() {
                     No patients yet
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Patients will appear here after they book an appointment with you.
+                    Patients will appear here after they book an appointment
+                    with you.
                   </p>
                 </div>
               ) : (
@@ -273,17 +291,24 @@ export default function DoctorPatients() {
 
                           <div className="text-right">
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Total: <span className="font-semibold">{item.totalAppointments || 0}</span>
+                              Total:{" "}
+                              <span className="font-semibold">
+                                {item.totalAppointments || 0}
+                              </span>
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Pending: <span className="font-semibold">{item.pendingCount || 0}</span>
+                              Pending:{" "}
+                              <span className="font-semibold">
+                                {item.pendingCount || 0}
+                              </span>
                             </div>
                           </div>
                         </div>
 
                         <div className="mt-2 flex items-center justify-between">
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Last: {item.lastAppointment?.date || "—"} • {item.lastAppointment?.timeSlot || ""}
+                            Last: {item.lastAppointment?.date || "—"} •{" "}
+                            {item.lastAppointment?.timeSlot || ""}
                           </p>
                           <StatusBadge status={item.lastAppointment?.status} />
                         </div>
@@ -317,9 +342,10 @@ export default function DoctorPatients() {
                       disabled={!selectedPatient}
                       title={!selectedPatient ? "Select a patient first" : ""}
                       onClick={() => {
-                        // placeholder: later connect to doctor-patient chat route/page
-                        if (!selectedPatient) return;
-                        alert("Chat feature: next step (we can build it)");
+                        const pid = selectedPatient?._id; //
+                        console.log("✅ Chat click pid:", pid);
+                        if (!pid) return;
+                        onOpenChat(pid);
                       }}
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -349,7 +375,8 @@ export default function DoctorPatients() {
                       Select a patient to view details
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Choose a patient from the left panel. You’ll see their profile and your appointment history.
+                      Choose a patient from the left panel. You’ll see their
+                      profile and your appointment history.
                     </p>
                   </div>
                 ) : loadingDetails ? (
@@ -359,26 +386,55 @@ export default function DoctorPatients() {
                 ) : (
                   <>
                     {/* Profile card */}
+                    <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800 flex items-center justify-center border border-gray-300 dark:border-gray-700">
+                      {patientDetails?.patient?.profileImage ? (
+                        <img
+                          src={`http://localhost:5000${patientDetails.patient.profileImage}`}
+                          alt="Patient"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="font-bold text-gray-600 dark:text-gray-300">
+                          {patientDetails?.patient?.firstName?.[0] || "P"}
+                          {patientDetails?.patient?.lastName?.[0] || ""}
+                        </span>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                          {selectedPatient?.firstName} {selectedPatient?.lastName}
+                          {selectedPatient?.firstName}{" "}
+                          {selectedPatient?.lastName}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {selectedPatient?.email || "—"}
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-2">
-                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/50 text-xs border border-gray-200 dark:border-gray-700">
+                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/150 text-xs border border-gray-200 dark:border-gray-700">
                             Age: <b>{selectedPatient?.age ?? "—"}</b>
                           </span>
-                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/50 text-xs border border-gray-200 dark:border-gray-700">
+                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/150 text-xs border border-gray-200 dark:border-gray-700">
                             Gender: <b>{selectedPatient?.gender || "—"}</b>
                           </span>
-                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/50 text-xs border border-gray-200 dark:border-gray-700">
+                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/150 text-xs border border-gray-200 dark:border-gray-700">
                             Blood: <b>{selectedPatient?.bloodType || "—"}</b>
                           </span>
                         </div>
+                        {selectedPatient?.injuryCondition ? (
+                          <div className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-gray-800 border border-amber-200 dark:border-gray-700">
+                            <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                              Condition
+                            </span>
+                            <span className="text-xs text-amber-900 dark:text-gray-200">
+                              {selectedPatient.injuryCondition}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="mt-3 text-xs text-gray-400">
+                            Condition: —
+                          </div>
+                        )}
                       </div>
 
                       <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
@@ -387,17 +443,19 @@ export default function DoctorPatients() {
                         </p>
 
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/150 border border-gray-200 dark:border-gray-700">
                             Height: <b>{selectedPatient?.height ?? "—"}</b>
                           </div>
-                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700">
+                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/150 border border-gray-200 dark:border-gray-700">
                             Weight: <b>{selectedPatient?.weight ?? "—"}</b>
                           </div>
-                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 col-span-2">
+                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/150 border border-gray-200 dark:border-gray-700 col-span-2">
                             Joined:{" "}
                             <b>
                               {selectedPatient?.createdAt
-                                ? new Date(selectedPatient.createdAt).toLocaleDateString()
+                                ? new Date(
+                                    selectedPatient.createdAt
+                                  ).toLocaleDateString()
                                 : "—"}
                             </b>
                           </div>
@@ -456,8 +514,14 @@ export default function DoctorPatients() {
               icon={MessageSquare}
             >
               <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                <p> Your backend already limits access to patients who booked you.</p>
-                <p>Next step: add a ChatMessage model + endpoints, then show chat history here.</p>
+                <p>
+                  {" "}
+                  Your backend already limits access to patients who booked you.
+                </p>
+                <p>
+                  Next step: add a ChatMessage model + endpoints, then show chat
+                  history here.
+                </p>
               </div>
             </Panel>
           </div>

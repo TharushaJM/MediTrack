@@ -6,6 +6,7 @@ import {
   Settings,
   LogOut,
   UserCircle,
+  MessageSquare, 
 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
@@ -36,7 +37,9 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
               <span className="text-white">Medi</span>
               <span className="text-white/90 dark:text-gray-300">Track</span>
             </h1>
-            <p className="text-xs text-white/70 dark:text-gray-400">Doctor Portal</p>
+            <p className="text-xs text-white/70 dark:text-gray-400">
+              Doctor Portal
+            </p>
           </div>
         </Link>
 
@@ -60,6 +63,13 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
             active={activeMenu === "appointments"}
             onClick={() => setActiveMenu("appointments")}
           />
+          <NavItem
+            icon={<MessageSquare size={20} />}
+            text="Chat"
+            active={activeMenu === "chat"}
+            onClick={() => setActiveMenu("chat")}
+          />
+
           <NavItem
             icon={<FileText size={20} />}
             text="Reports"
@@ -87,7 +97,10 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
           onClick={handleLogout}
           className="flex items-center gap-3 px-6 py-4 text-sm text-white/90 hover:bg-blue-600 dark:hover:bg-gray-800 transition-all w-full group"
         >
-          <LogOut size={18} className="group-hover:scale-110 transition-transform" />
+          <LogOut
+            size={18}
+            className="group-hover:scale-110 transition-transform"
+          />
           <span className="font-medium">Logout</span>
         </button>
       </div>
@@ -106,9 +119,7 @@ function NavItem({ icon, text, active, onClick }) {
           : "text-white/80 hover:bg-white/5 dark:hover:bg-gray-800/50 hover:text-white hover:pl-5"
       }`}
     >
-      <span className="transition-transform duration-200">
-        {icon}
-      </span>
+      <span className="transition-transform duration-200">{icon}</span>
       <span>{text}</span>
     </button>
   );

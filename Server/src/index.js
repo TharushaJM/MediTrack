@@ -12,6 +12,7 @@ import "./cron/reminderCron.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 
 
 
@@ -43,6 +44,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/doctor", doctorRoutes);
+app.use("/api/chat", chatRoutes);
 
 
 app.get("/", (req, res) => {

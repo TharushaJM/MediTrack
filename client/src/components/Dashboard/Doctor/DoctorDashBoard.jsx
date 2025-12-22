@@ -28,6 +28,7 @@ import DoctorHeader from "./DoctorHeader";
 import DoctorProfile from "./DoctorProfile";
 import { useTheme } from "../../../context/ThemeContext";
 import DoctorPatients from "./DoctorPatients";
+import DoctorChat from "./DoctorChat";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -39,6 +40,7 @@ export default function DoctorDashboard() {
   const [loading, setLoading] = useState(true);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [chatPatientId, setChatPatientId] = useState(null);
 
   // Mock data for patient visits
   const weeklyVisits = [
@@ -180,7 +182,24 @@ export default function DoctorDashboard() {
         {activeMenu === "profile" ? (
           <DoctorProfile />
         ) : activeMenu === "patients" ? (
-          <DoctorPatients />
+          <DoctorPatients
+            onOpenChat={(patientId) => {
+              setChatPatientId(patientId);
+              setActiveMenu("chat");
+            }}
+          />
+        ) : activeMenu === "chat" ? (    // chat render
+          chatPatientId ? (
+            <DoctorChat patientId={chatPatientId} />
+          ) : (
+            <div className="p-8">
+              <div className="bg-white dark:bg-gray-900 rounded-xl p-6">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Select a patient first before opening chat.
+                </p>
+              </div>
+            </div>
+          )
         ) : (
           <main className="p-8">
             {/* Summary Cards */}
