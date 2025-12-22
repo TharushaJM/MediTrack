@@ -5,8 +5,14 @@ import { useParams } from "react-router-dom";
 
 const API = "http://localhost:5000";
 
-export default function DoctorChat() {
-  const { patientId } = useParams();
+
+export default function DoctorChat({ patientId: propPatientId, onBack }) {
+  
+  
+  const { patientId: paramPatientId } = useParams();
+
+  
+  const patientId = propPatientId || paramPatientId;
   const rawToken = localStorage.getItem("token") || "";
   const token = rawToken
     .replace(/^"+|"+$/g, "")
@@ -36,49 +42,69 @@ export default function DoctorChat() {
   };
 
   useEffect(() => {
-    if (!patientId) return; //  VERY IMPORTANT
+    if (!patientId) return;
     if (!token) return;
 
-    const loadHistory = async () => {
-      try {
-        const { data } = await axios.get(`${API}/api/chat/${patientId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setMessages(data.messages || []);
-      } catch (err) {
-        console.error("Chat load error:", err);
-      }
-    };
-
     loadHistory();
-  }, [patientId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientId, token]);
 
-  const send = async () => {
-    if (!patientId) return; // ✅ stop if missing
-    if (!token) return; // ✅ stop if missing
-    if (!input.trim()) return;
+const send = async () => {
+    console.log("1. Send button clicked!");
 
+    // Check 1: Is Patient ID missing?
+    if (!patientId) {
+      console.error("❌ Error: Missing Patient ID. Check the URL.");
+      return;
+    }
+
+    // Check 2: Is Token missing?
+    if (!token) {
+      console.error("❌ Error: Missing Token. You might be logged out.");
+      alert("Please log in again.");
+      return;
+    }
+
+    // Check 3: Is Input empty?
+    if (!input.trim()) {
+      console.log("⚠️ Input is empty, ignoring.");
+      return;
+    }
+
+    console.log("2. Checks passed. Sending message:", input);
+
+    // --- OPTIMISTIC UPDATE (Show it on screen immediately) ---
     const temp = {
       _id: Math.random(),
       sender: { _id: "me" },
       text: input,
       createdAt: new Date().toISOString(),
     };
-    setMessages((p) => [...p, temp]);
+
+    console.log("3. Updating UI with temp message...");
+    setMessages((p) => [...p, temp]); // <--- THIS MAKES IT SHOW UP
     setInput("");
     setTimeout(scrollBottom, 50);
 
+    // --- API CALL ---
     try {
+      console.log("4. Sending to Backend...");
       const { data } = await axios.post(
         `${API}/api/chat/${patientId}`,
         { text: temp.text },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // replace temp message with real saved one
+      
+      console.log("5. Backend Success! Data received:", data);
+      
+      // Replace temp message with real one
       setMessages((p) => [...p.filter((m) => m._id !== temp._id), data]);
       setTimeout(scrollBottom, 50);
-    } catch {
-      // if failed, reload
+    } catch (err) {
+      console.error("❌ Backend Error:", err?.response?.data || err.message);
+      alert(err?.response?.data?.message || "Failed to send message");
+      
+      // If it failed, reload to remove the "fake" message
       loadHistory();
     }
   };

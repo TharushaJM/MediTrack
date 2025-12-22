@@ -340,12 +340,10 @@ export default function DoctorPatients({ onOpenChat }) {
                     <button
                       className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2"
                       disabled={!selectedPatient}
-                      title={!selectedPatient ? "Select a patient first" : ""}
                       onClick={() => {
-                        const pid = selectedPatient?._id; //
-                        console.log("✅ Chat click pid:", pid);
-                        if (!pid) return;
-                        onOpenChat(pid);
+                        const pid = selectedPatient?._id; // ✅ this is the patient id
+                        if (!pid) return alert("Select a patient first");
+                        onOpenChat(pid); // ✅ send id to dashboard
                       }}
                     >
                       <MessageSquare className="w-4 h-4" />
