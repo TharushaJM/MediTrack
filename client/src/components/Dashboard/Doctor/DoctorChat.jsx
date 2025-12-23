@@ -2,17 +2,19 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Send } from "lucide-react";
 import { useParams } from "react-router-dom";
+//   requested socket import path
+import { createSocket } from "../../../socket";
 
 const API = "http://localhost:5000";
 
-
 export default function DoctorChat({ patientId: propPatientId, onBack }) {
-  
-  
   const { patientId: paramPatientId } = useParams();
 
-  
+  // Determine Patient ID
   const patientId = propPatientId || paramPatientId;
+
+  const myUserId = JSON.parse(localStorage.getItem("user") || "{}")?.id;
+
   const rawToken = localStorage.getItem("token") || "";
   const token = rawToken
     .replace(/^"+|"+$/g, "")
@@ -23,6 +25,8 @@ export default function DoctorChat({ patientId: propPatientId, onBack }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
 
+  //   Add Socket Ref
+  const socketRef = useRef(null);
   const endRef = useRef(null);
 
   const scrollBottom = () =>
@@ -41,75 +45,73 @@ export default function DoctorChat({ patientId: propPatientId, onBack }) {
     }
   };
 
+  // --- SOCKET IO LOGIC ---
   useEffect(() => {
-    if (!patientId) return;
-    if (!token) return;
+    if (!patientId || !myUserId) return;
 
+    const s = createSocket();
+    socketRef.current = s;
+
+    const onConnect = () => console.log("✅ socket connected", s.id);
+    const onError = (err) => console.log("❌ socket error", err.message);
+
+    s.on("connect", onConnect);
+    s.on("connect_error", onError);
+
+    const join = () => s.emit("joinConversation", { otherUserId: patientId });
+    if (s.connected) join();
+    else s.once("connect", join);
+
+    s.on("message:new", (msg) => {
+      setMessages((prev) => {
+        if (prev.some((m) => String(m._id) === String(msg._id))) return prev;
+        const cleaned = prev.filter((m) => !String(m._id).startsWith("temp_"));
+        return [...cleaned, msg];
+      });
+      setTimeout(scrollBottom, 50);
+    });
+
+    return () => {
+      s.off("message:new");
+      s.off("connect", onConnect);
+      s.off("connect_error", onError);
+      s.off("connect", join);
+    };
+  }, [patientId, myUserId]);
+  // -----------------------
+
+  useEffect(() => {
+    if (!patientId || !token) return;
     loadHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId, token]);
 
-const send = async () => {
-    console.log("1. Send button clicked!");
+  const send = async () => {
+    if (!patientId || !token || !input.trim()) return;
 
-    // Check 1: Is Patient ID missing?
-    if (!patientId) {
-      console.error("❌ Error: Missing Patient ID. Check the URL.");
-      return;
-    }
+    const text = input.trim();
+    setInput(""); // Input
 
-    // Check 2: Is Token missing?
-    if (!token) {
-      console.error("❌ Error: Missing Token. You might be logged out.");
-      alert("Please log in again.");
-      return;
-    }
-
-    // Check 3: Is Input empty?
-    if (!input.trim()) {
-      console.log("⚠️ Input is empty, ignoring.");
-      return;
-    }
-
-    console.log("2. Checks passed. Sending message:", input);
-
-    // --- OPTIMISTIC UPDATE (Show it on screen immediately) ---
+    // --- 1. OPTIMISTIC UPDATE
+    const tempId = `temp_${Date.now()}`;
     const temp = {
-      _id: Math.random(),
-      sender: { _id: "me" },
-      text: input,
+      _id: tempId,
+      sender: { _id: myUserId }, //
+      text: text,
       createdAt: new Date().toISOString(),
     };
 
-    console.log("3. Updating UI with temp message...");
-    setMessages((p) => [...p, temp]); // <--- THIS MAKES IT SHOW UP
-    setInput("");
+    setMessages((p) => [...p, temp]);
     setTimeout(scrollBottom, 50);
 
-    // --- API CALL ---
-    try {
-      console.log("4. Sending to Backend...");
-      const { data } = await axios.post(
-        `${API}/api/chat/${patientId}`,
-        { text: temp.text },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      console.log("5. Backend Success! Data received:", data);
-      
-      // Replace temp message with real one
-      setMessages((p) => [...p.filter((m) => m._id !== temp._id), data]);
-      setTimeout(scrollBottom, 50);
-    } catch (err) {
-      console.error("❌ Backend Error:", err?.response?.data || err.message);
-      alert(err?.response?.data?.message || "Failed to send message");
-      
-      // If it failed, reload to remove the "fake" message
-      loadHistory();
+    // --- 2. SOCKET EMIT
+    if (socketRef.current) {
+      socketRef.current.emit("sendMessage", {
+        otherUserId: patientId,
+        text: text,
+      });
     }
   };
-
-  const myUserId = JSON.parse(localStorage.getItem("user") || "{}")?.id;
 
   return (
     <div className="p-6">
