@@ -63,7 +63,12 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
             active={activeMenu === "appointments"}
             onClick={() => setActiveMenu("appointments")}
           />
-          <NavItem to="/chat" icon={<MessageSquare size={20} />} text="Chat" />
+          <NavItem
+            icon={<MessageSquare size={20} />}
+            text="Chat"
+            active={activeMenu === "chat"}
+            onClick={() => setActiveMenu("chat")}
+          />
 
           <NavItem
             icon={<FileText size={20} />}

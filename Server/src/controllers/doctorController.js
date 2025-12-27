@@ -8,7 +8,7 @@ export const getMyPatients = async (req, res) => {
 
     // Find all appointments for this doctor, and populate patient info
     const appointments = await Appointment.find({ doctorId })
-      .populate("patientId", "firstName lastName email age gender bloodType")
+      .populate("patientId", "firstName lastName email age gender bloodType profileImage")
       .sort({ createdAt: -1 });
 
     // Unique patients based on patientId

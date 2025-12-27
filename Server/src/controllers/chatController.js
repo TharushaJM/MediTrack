@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import mongoose from "mongoose";
 import ChatMessage from "../models/ChatMessage.js";
 import Appointment from "../models/Appointment.js";
+import User from "../models/User.js";    //for fetch users 
 
 // make same conversationId no matter who sends first
 const makeConversationId = (a, b) => {
@@ -80,3 +81,62 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
   res.status(201).json(populated);
 });
+
+//get users covwersation for chat bar
+export const getConversations = asyncHandler(async (req, res) => {
+  const myId = req.user._id;
+  const role = req.user.role;
+
+  // get partner ids from appointments
+  let partnerIds = [];
+  if (role === "patient") {
+    partnerIds = await Appointment.distinct("doctorId", { patientId: myId });
+  } else if (role === "doctor") {
+    partnerIds = await Appointment.distinct("patientId", { doctorId: myId });
+  } else {
+    return res.json({ conversations: [] });
+  }
+
+  const partners = await User.find({ _id: { $in: partnerIds } })
+    .select("firstName lastName role profileImage specialization title")
+    .lean();
+
+  const makeConversationId = (a, b) => {
+    const [x, y] = [String(a), String(b)].sort();
+    return `${x}_${y}`;
+  };
+
+  const conversations = await Promise.all(
+    partners.map(async (p) => {
+      const conversationId = makeConversationId(myId, p._id);
+
+      const last = await ChatMessage.findOne({ conversationId })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      const unreadCount = await ChatMessage.countDocuments({
+        conversationId,
+        receiver: myId,
+        read: false,
+      });
+
+      return {
+        id: String(p._id),
+        user: p,
+        lastMessage: last
+          ? { text: last.text, createdAt: last.createdAt }
+          : null,
+        unreadCount,
+      };
+    })
+  );
+
+  conversations.sort((a, b) => {
+    const at = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+    const bt = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+    return bt - at;
+  });
+
+  res.json({ conversations });
+});
+

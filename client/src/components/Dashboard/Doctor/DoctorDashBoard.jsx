@@ -32,6 +32,18 @@ import DoctorChat from "./DoctorChat";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
+const getInitials = (p) => {
+  const first = (p?.firstName || "").trim()[0] || "";
+  const last = (p?.lastName || "").trim()[0] || "";
+  return (first + last).toUpperCase() || "U";
+};
+
+const getProfilePic = (p, API_URL) => {
+  if (!p?.profileImage) return null; // no image
+  if (p.profileImage.startsWith("http")) return p.profileImage;
+  return `${API_URL}${p.profileImage}`; // backend image path
+};
+
 export default function DoctorDashboard() {
   const { darkMode } = useTheme();
   const [activeMenu, setActiveMenu] = useState("dashboard");
@@ -41,6 +53,10 @@ export default function DoctorDashboard() {
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [chatPatientId, setChatPatientId] = useState(null);
+
+  const [patientsForChat, setPatientsForChat] = useState([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   // Mock data for patient visits
   const weeklyVisits = [
@@ -168,6 +184,51 @@ export default function DoctorDashboard() {
     )}&background=007BFF&color=fff&size=100`;
   };
 
+  const cleanToken = (t) =>
+    (t || "")
+      .replace(/^"+|"+$/g, "")
+      .replace(/^'+|'+$/g, "")
+      .trim();
+
+  //this for get chatlist of patient
+  const loadPatientsForChat = async () => {
+    try {
+      setPatientsLoading(true);
+
+      const token = cleanToken(localStorage.getItem("token"));
+
+      const { data } = await axios.get(`${API_URL}/api/doctor/patients`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const list = (Array.isArray(data) ? data : [])
+        .map((x) => x.patient)
+        .filter(Boolean)
+        .map((p) => ({
+          ...p,
+          lastText: "",
+          lastTime: "",
+        }));
+
+      setPatientsForChat(list);
+    } catch (err) {
+      console.log(
+        "❌ loadPatientsForChat error:",
+        err?.response?.data || err.message
+      );
+      setPatientsForChat([]);
+    } finally {
+      setPatientsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeMenu === "chat") {
+      loadPatientsForChat();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMenu]);
+
   return (
     <div className={`min-h-screen ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
       {/* Sidebar */}
@@ -188,18 +249,118 @@ export default function DoctorDashboard() {
               setActiveMenu("chat");
             }}
           />
-        ) : activeMenu === "chat" ? (    // chat render
-          chatPatientId ? (
-            <DoctorChat patientId={chatPatientId} />
-          ) : (
-            <div className="p-8">
-              <div className="bg-white dark:bg-gray-900 rounded-xl p-6">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Select a patient first before opening chat.
-                </p>
+        ) : activeMenu === "chat" ? (
+          <div className="p-8">
+            <div className="h-[650px] flex gap-4">
+              {/* LEFT: patients list */}
+              <div className="w-80 bg-white dark:bg-gray-900 rounded-xl border dark:border-gray-800 overflow-hidden">
+                <div className="p-4 border-b dark:border-gray-800">
+                  <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                    Patients
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Select a patient to chat
+                  </p>
+                </div>
+
+                <div className="overflow-y-auto h-[580px]">
+                  {patientsLoading ? (
+                    <div className="p-4 text-sm text-gray-500 dark:text-gray-400">
+                      Loading patients...
+                    </div>
+                  ) : patientsForChat.length === 0 ? (
+                    <div className="p-4 text-sm text-gray-500 dark:text-gray-400">
+                      No patients found (need appointment first).
+                    </div>
+                  ) : (
+                    patientsForChat.map((p) => {
+                      const active = String(p._id) === String(chatPatientId);
+                      return (
+                        <button
+                          key={p._id}
+                          onClick={() => {
+                            setChatPatientId(p._id);
+                            setSelectedPatient(p);
+                          }}
+                          className={`w-full text-left px-4 py-3 border-b dark:border-gray-800 ${
+                            active ? "bg-blue-50 dark:bg-gray-800" : ""
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* ✅ AVATAR */}
+                            {p.profileImage ? (
+                              <img
+                                src={
+                                  p.profileImage.startsWith("http")
+                                    ? p.profileImage
+                                    : `${API_URL}${p.profileImage}`
+                                }
+                                alt={`${p.firstName} ${p.lastName}`}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+                                {(p.firstName?.[0] || "") +
+                                  (p.lastName?.[0] || "")}
+                              </div>
+                            )}
+
+                            {/* ✅ NAME + LAST MESSAGE */}
+                            <div className="min-w-0">
+                              <div className="font-medium text-gray-900 dark:text-gray-100">
+                                {p.firstName} {p.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                {p.lastText || "No messages yet"}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* RIGHT: chat */}
+              <div className="flex-1">
+                {chatPatientId ? (
+                  <DoctorChat
+                    patientId={chatPatientId}
+                    patient={selectedPatient}
+                    onNewMessage={(msg) => {
+                      // Update LEFT LIST automatically when message comes
+                      setPatientsForChat((prev) => {
+                        const otherId =
+                          String(msg.sender?._id) === String(chatPatientId)
+                            ? msg.sender?._id
+                            : msg.receiver?._id;
+
+                        // update + move to top
+                        const copy = [...prev];
+                        const i = copy.findIndex(
+                          (x) => String(x._id) === String(otherId)
+                        );
+                        if (i === -1) return prev;
+
+                        const item = copy.splice(i, 1)[0];
+                        item.lastText = msg.text;
+                        item.lastTime = msg.createdAt;
+
+                        return [item, ...copy];
+                      });
+                    }}
+                  />
+                ) : (
+                  <div className="h-[650px] bg-white dark:bg-gray-900 rounded-xl p-6 border dark:border-gray-800 flex items-center justify-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Select a patient to start chatting.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-          )
+          </div>
         ) : (
           <main className="p-8">
             {/* Summary Cards */}

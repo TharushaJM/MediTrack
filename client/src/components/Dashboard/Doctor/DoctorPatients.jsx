@@ -505,23 +505,7 @@ export default function DoctorPatients({ onOpenChat }) {
               </div>
             </div>
 
-            {/* Optional: future section (notes/chat preview) */}
-            <Panel
-              title="Next Improvements (Optional)"
-              subtitle="We can add doctor notes + doctor↔patient chat next."
-              icon={MessageSquare}
-            >
-              <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                <p>
-                  {" "}
-                  Your backend already limits access to patients who booked you.
-                </p>
-                <p>
-                  Next step: add a ChatMessage model + endpoints, then show chat
-                  history here.
-                </p>
-              </div>
-            </Panel>
+            
           </div>
         </div>
       </div>

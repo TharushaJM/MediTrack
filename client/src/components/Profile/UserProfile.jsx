@@ -1,7 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Mail, Calendar, User, Phone, MapPin, Heart, Ruler, Weight, Shield, Camera, Save, Edit3, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Mail,
+  Calendar,
+  User,
+  Phone,
+  MapPin,
+  Heart,
+  Ruler,
+  Weight,
+  Shield,
+  Camera,
+  Save,
+  Edit3,
+  Lock,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -15,11 +34,15 @@ export default function UserProfile() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+
   const [passwords, setPasswords] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+
+  const fileRef = useRef(null);
 
   const fetchProfile = async () => {
     try {
@@ -49,14 +72,36 @@ export default function UserProfile() {
     try {
       setSaving(true);
       const token = localStorage.getItem("token");
-      const { data } = await axios.put(`${API_URL}/api/users/profile`, form, {
-        headers: { Authorization: `Bearer ${token}` },
+
+      const fd = new FormData();
+
+      // add text fields
+      Object.keys(form).forEach((key) => {
+        const val = form[key];
+        if (val !== undefined && val !== null) {
+          fd.append(key, val);
+        }
       });
+
+      // add image file (IMPORTANT)
+      if (avatarFile) {
+        fd.append("profileImage", avatarFile); // must match multer field name
+      }
+
+      const { data } = await axios.put(`${API_URL}/api/users/profile`, fd, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       toast.success("Profile updated successfully!");
       setUser(data.user);
       setForm(data.user);
+      setAvatarFile(null);
       setEditing(false);
     } catch (error) {
+      console.log(error);
       toast.error("Error updating profile");
     } finally {
       setSaving(false);
@@ -80,7 +125,11 @@ export default function UserProfile() {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Password changed successfully!");
-      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswords({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (error) {
       toast.error("Incorrect current password or update failed");
     } finally {
@@ -88,19 +137,36 @@ export default function UserProfile() {
     }
   };
 
-  const getProfileImage = () => {
-    if (user?.profileImage) {
-      if (user.profileImage.startsWith("http")) return user.profileImage;
-      return `${API_URL}/${user.profileImage}`;
-    }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent((user?.firstName || "") + " " + (user?.lastName || ""))}&background=007BFF&color=fff&size=150`;
-  };
+const getProfileImage = () => {
+  const img = user?.profileImage;
+
+  if (img) {
+    
+    if (img.startsWith("blob:") || img.startsWith("data:")) return img;
+
+    
+    if (img.startsWith("http")) return img;
+
+   
+    const cleanPath = img.startsWith("/") ? img : `/${img}`;
+    return `${API_URL}${cleanPath}`;
+  }
+
+  
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    (user?.firstName || "") + " " + (user?.lastName || "")
+  )}&background=007BFF&color=fff&size=150`;
+};
+
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 size={48} className="text-[#007BFF] animate-spin mx-auto mb-4" />
+          <Loader2
+            size={48}
+            className="text-[#007BFF] animate-spin mx-auto mb-4"
+          />
           <p className="text-gray-500 dark:text-gray-400">Loading profile...</p>
         </div>
       </div>
@@ -127,29 +193,99 @@ export default function UserProfile() {
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="relative group">
                 <div className="w-28 h-28 rounded-full border-4 border-white/30 shadow-2xl overflow-hidden bg-gray-200">
-                  <img src={getProfileImage()} alt={user.firstName} className="w-full h-full object-cover" onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${user.firstName}&background=007BFF&color=fff&size=150`; }} />
+                  <img
+                    src={getProfileImage()}
+                    alt={user.firstName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = `https://ui-avatars.com/api/?name=${user.firstName}&background=007BFF&color=fff&size=150`;
+                    }}
+                  />
                 </div>
-                <button className="absolute bottom-0 right-0 w-9 h-9 bg-white dark:bg-gray-700 rounded-full shadow-lg flex items-center justify-center text-[#007BFF] hover:scale-110 transition-transform">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="absolute bottom-0 right-0 w-9 h-9 bg-white dark:bg-gray-700 rounded-full shadow-lg flex items-center justify-center text-[#007BFF] hover:scale-110 transition-transform"
+                >
                   <Camera size={16} />
                 </button>
+
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    setAvatarFile(file);
+
+                    // preview immediately in UI
+                    const previewUrl = URL.createObjectURL(file);
+                    setUser((prev) => ({ ...prev, profileImage: previewUrl }));
+                  }}
+                />
               </div>
               <div className="text-center md:text-left flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">{user.firstName} {user.lastName}</h1>
-                <p className="text-blue-100 dark:text-gray-400 flex items-center justify-center md:justify-start gap-2 mb-3"><Mail size={16} />{user.email}</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
+                  {user.firstName} {user.lastName}
+                </h1>
+                <p className="text-blue-100 dark:text-gray-400 flex items-center justify-center md:justify-start gap-2 mb-3">
+                  <Mail size={16} />
+                  {user.email}
+                </p>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-blue-100 dark:text-gray-400">
-                  {user.phone && <span className="flex items-center gap-1"><Phone size={14} /> {user.phone}</span>}
-                  {user.city && <span className="flex items-center gap-1"><MapPin size={14} /> {user.city}</span>}
-                  {user.gender && <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">{user.gender}</span>}
+                  {user.phone && (
+                    <span className="flex items-center gap-1">
+                      <Phone size={14} /> {user.phone}
+                    </span>
+                  )}
+                  {user.city && (
+                    <span className="flex items-center gap-1">
+                      <MapPin size={14} /> {user.city}
+                    </span>
+                  )}
+                  {user.gender && (
+                    <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full">
+                      {user.gender}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
                 {editing ? (
                   <>
-                    <button onClick={() => { setForm(user); setEditing(false); }} className="px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all font-medium">Cancel</button>
-                    <button onClick={handleSave} disabled={saving} className="px-5 py-2.5 bg-[#28A745] hover:bg-[#218838] text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium flex items-center gap-2">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}Save</button>
+                    <button
+                      onClick={() => {
+                        setForm(user);
+                        setEditing(false);
+                      }}
+                      className="px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="px-5 py-2.5 bg-[#28A745] hover:bg-[#218838] text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium flex items-center gap-2"
+                    >
+                      {saving ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <Save size={18} />
+                      )}
+                      Save
+                    </button>
                   </>
                 ) : (
-                  <button onClick={() => setEditing(true)} className="px-5 py-2.5 bg-white text-[#007BFF] hover:bg-blue-50 rounded-xl shadow-lg hover:shadow-xl transition-all font-medium flex items-center gap-2"><Edit3 size={18} />Edit Profile</button>
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="px-5 py-2.5 bg-white text-[#007BFF] hover:bg-blue-50 rounded-xl shadow-lg hover:shadow-xl transition-all font-medium flex items-center gap-2"
+                  >
+                    <Edit3 size={18} />
+                    Edit Profile
+                  </button>
                 )}
               </div>
             </div>
@@ -158,7 +294,15 @@ export default function UserProfile() {
 
         <div className="flex gap-2 mb-6 bg-white dark:bg-gray-900 p-1.5 rounded-xl shadow-sm">
           {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${activeTab === tab.id ? "bg-[#007BFF] text-white shadow-md" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all ${
+                activeTab === tab.id
+                  ? "bg-[#007BFF] text-white shadow-md"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
               <tab.icon size={18} />
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
@@ -169,18 +313,88 @@ export default function UserProfile() {
           {activeTab === "personal" && (
             <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center"><User size={20} className="text-[#007BFF]" /></div>
-                <div><h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Personal Information</h2><p className="text-sm text-gray-500 dark:text-gray-400">Your basic details and contact info</p></div>
+                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                  <User size={20} className="text-[#007BFF]" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    Personal Information
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Your basic details and contact info
+                  </p>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <InputField label="First Name" name="firstName" value={form.firstName} onChange={handleChange} disabled={!editing} icon={User} />
-                <InputField label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} disabled={!editing} icon={User} />
-                <InputField label="Email Address" name="email" value={form.email} onChange={handleChange} disabled={true} icon={Mail} helper="Email cannot be changed" />
-                <InputField label="Phone Number" name="phone" value={form.phone} onChange={handleChange} disabled={!editing} icon={Phone} placeholder="+94 77 123 4567" />
-                <InputField label="Date of Birth" name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={handleChange} disabled={!editing} icon={Calendar} />
-                <SelectField label="Gender" name="gender" value={form.gender} onChange={handleChange} disabled={!editing} options={["Male", "Female", "Other"]} />
-                <InputField label="City" name="city" value={form.city} onChange={handleChange} disabled={!editing} icon={MapPin} placeholder="Colombo" />
-                <InputField label="Address" name="address" value={form.address} onChange={handleChange} disabled={!editing} icon={MapPin} placeholder="123 Main Street" />
+                <InputField
+                  label="First Name"
+                  name="firstName"
+                  value={form.firstName}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={User}
+                />
+                <InputField
+                  label="Last Name"
+                  name="lastName"
+                  value={form.lastName}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={User}
+                />
+                <InputField
+                  label="Email Address"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  disabled={true}
+                  icon={Mail}
+                  helper="Email cannot be changed"
+                />
+                <InputField
+                  label="Phone Number"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={Phone}
+                  placeholder="+94 77 123 4567"
+                />
+                <InputField
+                  label="Date of Birth"
+                  name="dateOfBirth"
+                  type="date"
+                  value={form.dateOfBirth}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={Calendar}
+                />
+                <SelectField
+                  label="Gender"
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  options={["Male", "Female", "Other"]}
+                />
+                <InputField
+                  label="City"
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={MapPin}
+                  placeholder="Colombo"
+                />
+                <InputField
+                  label="Address"
+                  name="address"
+                  value={form.address}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={MapPin}
+                  placeholder="123 Main Street"
+                />
               </div>
             </div>
           )}
@@ -188,20 +402,80 @@ export default function UserProfile() {
           {activeTab === "health" && (
             <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center"><Heart size={20} className="text-red-500" /></div>
-                <div><h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Health Metrics</h2><p className="text-sm text-gray-500 dark:text-gray-400">Your physical measurements and health data</p></div>
+                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                  <Heart size={20} className="text-red-500" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    Health Metrics
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Your physical measurements and health data
+                  </p>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <SelectField label="Blood Type" name="bloodType" value={form.bloodType} onChange={handleChange} disabled={!editing} options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]} />
-                <InputField label="Height (cm)" name="height" type="number" value={form.height} onChange={handleChange} disabled={!editing} icon={Ruler} placeholder="170" />
-                <InputField label="Weight (kg)" name="weight" type="number" value={form.weight} onChange={handleChange} disabled={!editing} icon={Weight} placeholder="70" />
-                <InputField label="Medical Condition" name="injuryCondition" value={form.injuryCondition} onChange={handleChange} disabled={!editing} icon={AlertCircle} placeholder="Any existing conditions" />
+                <SelectField
+                  label="Blood Type"
+                  name="bloodType"
+                  value={form.bloodType}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  options={["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]}
+                />
+                <InputField
+                  label="Height (cm)"
+                  name="height"
+                  type="number"
+                  value={form.height}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={Ruler}
+                  placeholder="170"
+                />
+                <InputField
+                  label="Weight (kg)"
+                  name="weight"
+                  type="number"
+                  value={form.weight}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={Weight}
+                  placeholder="70"
+                />
+                <InputField
+                  label="Medical Condition"
+                  name="injuryCondition"
+                  value={form.injuryCondition}
+                  onChange={handleChange}
+                  disabled={!editing}
+                  icon={AlertCircle}
+                  placeholder="Any existing conditions"
+                />
               </div>
               {form.height && form.weight && (
                 <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-xl border border-green-200 dark:border-gray-600">
                   <div className="flex items-center justify-between">
-                    <div><p className="text-sm text-gray-600 dark:text-gray-400">Your BMI</p><p className="text-2xl font-bold text-[#007BFF]">{(form.weight / ((form.height / 100) ** 2)).toFixed(1)}</p></div>
-                    <div className="flex items-center gap-2 text-[#28A745]"><CheckCircle size={20} /><span className="font-medium">{(() => { const bmi = form.weight / ((form.height / 100) ** 2); if (bmi < 18.5) return "Underweight"; if (bmi < 25) return "Normal"; if (bmi < 30) return "Overweight"; return "Obese"; })()}</span></div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Your BMI
+                      </p>
+                      <p className="text-2xl font-bold text-[#007BFF]">
+                        {(form.weight / (form.height / 100) ** 2).toFixed(1)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-[#28A745]">
+                      <CheckCircle size={20} />
+                      <span className="font-medium">
+                        {(() => {
+                          const bmi = form.weight / (form.height / 100) ** 2;
+                          if (bmi < 18.5) return "Underweight";
+                          if (bmi < 25) return "Normal";
+                          if (bmi < 30) return "Overweight";
+                          return "Obese";
+                        })()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -211,44 +485,172 @@ export default function UserProfile() {
           {activeTab === "security" && (
             <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center"><Shield size={20} className="text-purple-500" /></div>
-                <div><h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Security Settings</h2><p className="text-sm text-gray-500 dark:text-gray-400">Manage your password and account security</p></div>
+                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                  <Shield size={20} className="text-purple-500" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    Security Settings
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Manage your password and account security
+                  </p>
+                </div>
               </div>
               <form onSubmit={handlePasswordChange} className="space-y-5">
                 <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Current Password
+                  </label>
                   <div className="relative">
-                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type={showCurrentPassword ? "text" : "password"} value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all" placeholder="Enter current password" />
-                    <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">{showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                    <Lock
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={passwords.currentPassword}
+                      onChange={(e) =>
+                        setPasswords({
+                          ...passwords,
+                          currentPassword: e.target.value,
+                        })
+                      }
+                      className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all"
+                      placeholder="Enter current password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowCurrentPassword(!showCurrentPassword)
+                      }
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showCurrentPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      New Password
+                    </label>
                     <div className="relative">
-                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type={showNewPassword ? "text" : "password"} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all" placeholder="Enter new password" />
-                      <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">{showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                      <Lock
+                        size={18}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
+                      <input
+                        type={showNewPassword ? "text" : "password"}
+                        value={passwords.newPassword}
+                        onChange={(e) =>
+                          setPasswords({
+                            ...passwords,
+                            newPassword: e.target.value,
+                          })
+                        }
+                        className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all"
+                        placeholder="Enter new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showNewPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
                     </div>
                   </div>
                   <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Confirm New Password
+                    </label>
                     <div className="relative">
-                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type={showConfirmPassword ? "text" : "password"} value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all" placeholder="Confirm new password" />
-                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">{showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                      <Lock
+                        size={18}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={passwords.confirmPassword}
+                        onChange={(e) =>
+                          setPasswords({
+                            ...passwords,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all"
+                        placeholder="Confirm new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
                 {passwords.newPassword && (
                   <div className="space-y-2">
-                    <div className="flex gap-1">{[1, 2, 3, 4].map((level) => (<div key={level} className={`h-1.5 flex-1 rounded-full transition-colors ${passwords.newPassword.length >= level * 3 ? level <= 2 ? "bg-red-400" : level === 3 ? "bg-yellow-400" : "bg-green-400" : "bg-gray-200 dark:bg-gray-600"}`} />))}</div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{passwords.newPassword.length < 6 ? "Weak - Add more characters" : passwords.newPassword.length < 10 ? "Medium - Consider adding numbers or symbols" : "Strong password"}</p>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-1.5 flex-1 rounded-full transition-colors ${
+                            passwords.newPassword.length >= level * 3
+                              ? level <= 2
+                                ? "bg-red-400"
+                                : level === 3
+                                ? "bg-yellow-400"
+                                : "bg-green-400"
+                              : "bg-gray-200 dark:bg-gray-600"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {passwords.newPassword.length < 6
+                        ? "Weak - Add more characters"
+                        : passwords.newPassword.length < 10
+                        ? "Medium - Consider adding numbers or symbols"
+                        : "Strong password"}
+                    </p>
                   </div>
                 )}
                 <div className="flex justify-end pt-4">
-                  <button type="submit" disabled={saving || !passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword} className="px-6 py-3 bg-[#007BFF] hover:bg-[#0056b3] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium flex items-center gap-2">{saving ? <Loader2 size={18} className="animate-spin" /> : <Lock size={18} />}Update Password</button>
+                  <button
+                    type="submit"
+                    disabled={
+                      saving ||
+                      !passwords.currentPassword ||
+                      !passwords.newPassword ||
+                      !passwords.confirmPassword
+                    }
+                    className="px-6 py-3 bg-[#007BFF] hover:bg-[#0056b3] disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium flex items-center gap-2"
+                  >
+                    {saving ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Lock size={18} />
+                    )}
+                    Update Password
+                  </button>
                 </div>
               </form>
             </div>
@@ -259,15 +661,50 @@ export default function UserProfile() {
   );
 }
 
-function InputField({ label, name, value, onChange, disabled, type = "text", icon: Icon, placeholder, helper }) {
+function InputField({
+  label,
+  name,
+  value,
+  onChange,
+  disabled,
+  type = "text",
+  icon: Icon,
+  placeholder,
+  helper,
+}) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {label}
+      </label>
       <div className="relative">
-        {Icon && <Icon size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />}
-        <input type={type} name={name} value={value || ""} onChange={onChange} disabled={disabled} placeholder={placeholder} className={`w-full ${Icon ? "pl-11" : "pl-4"} pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all ${disabled ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900" : ""}`} />
+        {Icon && (
+          <Icon
+            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+        )}
+        <input
+          type={type}
+          name={name}
+          value={value || ""}
+          onChange={onChange}
+          disabled={disabled}
+          placeholder={placeholder}
+          className={`w-full ${
+            Icon ? "pl-11" : "pl-4"
+          } pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all ${
+            disabled
+              ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900"
+              : ""
+          }`}
+        />
       </div>
-      {helper && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{helper}</p>}
+      {helper && (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {helper}
+        </p>
+      )}
     </div>
   );
 }
@@ -275,10 +712,26 @@ function InputField({ label, name, value, onChange, disabled, type = "text", ico
 function SelectField({ label, name, value, onChange, disabled, options }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>
-      <select name={name} value={value || ""} onChange={onChange} disabled={disabled} className={`w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all appearance-none cursor-pointer ${disabled ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900" : ""}`}>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {label}
+      </label>
+      <select
+        name={name}
+        value={value || ""}
+        onChange={onChange}
+        disabled={disabled}
+        className={`w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#007BFF] focus:border-transparent outline-none transition-all appearance-none cursor-pointer ${
+          disabled
+            ? "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900"
+            : ""
+        }`}
+      >
         <option value="">Select {label}</option>
-        {options.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
       </select>
     </div>
   );

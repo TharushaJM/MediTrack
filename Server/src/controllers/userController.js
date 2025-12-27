@@ -5,11 +5,9 @@ import asyncHandler from "express-async-handler";
 
 // helper to generate token (optional but cleaner)
 const generateToken = (user) => {
-  return jwt.sign(
-    { id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
 };
 
 // ✅ REGISTER USER
@@ -95,7 +93,8 @@ export const registerUser = asyncHandler(async (req, res) => {
   //  For doctors, don't auto-login (they need approval)
   if (role === "doctor") {
     return res.status(201).json({
-      message: "Doctor registration successful! Your account is pending admin approval.",
+      message:
+        "Doctor registration successful! Your account is pending admin approval.",
       user: {
         id: newUser._id,
         firstName: newUser.firstName,
@@ -157,8 +156,9 @@ export const loginUser = asyncHandler(async (req, res) => {
   //  Check if doctor is approved
   if (user.role === "doctor" && !user.isApproved) {
     console.log("❌ Doctor not approved yet:", email);
-    return res.status(403).json({ 
-      message: "Your account is pending admin approval. Please wait for approval before logging in." 
+    return res.status(403).json({
+      message:
+        "Your account is pending admin approval. Please wait for approval before logging in.",
     });
   }
 
@@ -174,10 +174,10 @@ export const loginUser = asyncHandler(async (req, res) => {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
-      isApproved: user.isApproved,          //  important for blocking unapproved doctors in UI
-      specialization: user.specialization,  // optional but handy
+      isApproved: user.isApproved, //  important for blocking unapproved doctors in UI
+      specialization: user.specialization, // optional but handy
       licenseNumber: user.licenseNumber,
-      profileImage: user.profileImage,      //  for displaying profile picture
+      profileImage: user.profileImage, //  for displaying profile picture
     },
   });
 });
@@ -199,32 +199,16 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   user.firstName = req.body.firstName || user.firstName;
   user.lastName = req.body.lastName || user.lastName;
-  user.email = req.body.email || user.email;
-  user.age = req.body.age ?? user.age;
-  user.gender = req.body.gender || user.gender;
-  user.bloodType = req.body.bloodType || user.bloodType;
-  user.height = req.body.height ?? user.height;
-  user.weight = req.body.weight ?? user.weight;
 
-  // (optional) allow doctor to update specialization/license:
-  // user.specialization = req.body.specialization || user.specialization;
-  // user.licenseNumber = req.body.licenseNumber || user.licenseNumber;
-
-  //  Change password safely
-  if (req.body.currentPassword && req.body.newPassword) {
-    const isMatch = await user.matchPassword(req.body.currentPassword);
-    if (!isMatch) {
-      res.status(400);
-      throw new Error("Current password is incorrect");
-    }
-    user.password = req.body.newPassword; // auto-hash by pre('save')
+  // ✅ SAVE IMAGE IF UPLOADED
+  if (req.file) {
+    
+    user.profileImage = `/uploads/profiles/${req.file.filename}`;
   }
 
   const updatedUser = await user.save();
-  res.json({
-    message: "Profile updated successfully",
-    user: updatedUser,
-  });
+  
+  res.json({ message: "Profile updated successfully", user: updatedUser });
 });
 
 //  GET PENDING DOCTORS (for admin approval)

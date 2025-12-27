@@ -48,7 +48,9 @@ router.get("/doctors/approved", getApprovedDoctors); // Public - For Find Doctor
 
 // Protected user routes
 router.get("/profile", protect, getProfile);
-router.put("/profile", protect, updateProfile);
+router.put("/profile", protect, upload.single("profileImage"), updateProfile);
+
+
 
 // Admin routes - Get users
 router.get("/doctors/pending", protect, getPendingDoctors); // Pending doctors only
