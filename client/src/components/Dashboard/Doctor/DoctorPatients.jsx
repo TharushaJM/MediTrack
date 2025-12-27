@@ -11,9 +11,41 @@ import {
   Stethoscope,
   FileText,
   MessageSquare,
+  RefreshCw,
 } from "lucide-react";
 
-const API = "http://localhost:5000";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+/* ---------------- helpers ---------------- */
+
+const cleanToken = (t = "") =>
+  String(t).replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "").trim();
+
+// ✅ build correct url for image paths like "/uploads/profiles/xxx.jpg"
+const buildImgUrl = (imgPath) => {
+  if (!imgPath) return "";
+  if (imgPath.startsWith("http") || imgPath.startsWith("blob:")) return imgPath;
+  return `${API_URL}${imgPath.startsWith("/") ? imgPath : `/${imgPath}`}`;
+};
+
+const avatarFallback = (firstName = "", lastName = "") => {
+  const name = `${firstName} ${lastName}`.trim() || "User";
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    name
+  )}&background=0D8ABC&color=fff&size=128`;
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  // if "2025-12-30" valid -> show Dec 30
+  if (!isNaN(d.getTime())) {
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+  return dateStr; // fallback if already formatted
+};
+
+/* ---------------- UI atoms ---------------- */
 
 function StatusBadge({ status }) {
   const s = (status || "").toLowerCase();
@@ -50,10 +82,10 @@ function StatusBadge({ status }) {
   );
 }
 
-function Panel({ title, subtitle, icon: Icon, children }) {
+function Panel({ title, subtitle, icon: Icon, children, right }) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden">
-      <div className="p-5 border-b dark:border-gray-800">
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+      <div className="p-5 border-b dark:border-gray-800 flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-lg bg-blue-50 dark:bg-gray-800">
             <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -69,16 +101,28 @@ function Panel({ title, subtitle, icon: Icon, children }) {
             ) : null}
           </div>
         </div>
+        {right ? <div>{right}</div> : null}
       </div>
       <div className="p-5">{children}</div>
     </div>
   );
 }
 
+function Pill({ label, value }) {
+  return (
+    <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/60 text-xs border border-gray-200 dark:border-gray-700">
+      {label}: <b>{value ?? "—"}</b>
+    </span>
+  );
+}
+
+/* ---------------- main component ---------------- */
+
 export default function DoctorPatients({ onOpenChat }) {
-  const [patients, setPatients] = useState([]); // items from /api/doctor/patients
-  const [selected, setSelected] = useState(null); // {patient, lastAppointment, totalAppointments...}
-  const [patientDetails, setPatientDetails] = useState(null); // {patient, appointments}
+  const [patients, setPatients] = useState([]); // from /api/doctor/patients
+  const [selected, setSelected] = useState(null); // { patient, lastAppointment, totalAppointments... }
+  const [patientDetails, setPatientDetails] = useState(null); // { patient, appointments }
+
   const [loadingList, setLoadingList] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState("");
@@ -86,17 +130,13 @@ export default function DoctorPatients({ onOpenChat }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all"); // all | recent | pending | completed
 
-  const rawToken = localStorage.getItem("token") || "";
-  const token = rawToken
-    .replace(/^"+|"+$/g, "")
-    .replace(/^'+|'+$/g, "")
-    .trim();
+  const token = cleanToken(localStorage.getItem("token") || "");
 
   const fetchPatients = async () => {
     setError("");
     setLoadingList(true);
     try {
-      const { data } = await axios.get(`${API}/api/doctor/patients`, {
+      const { data } = await axios.get(`${API_URL}/api/doctor/patients`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPatients(Array.isArray(data) ? data : []);
@@ -114,15 +154,12 @@ export default function DoctorPatients({ onOpenChat }) {
     setLoadingDetails(true);
     try {
       const { data } = await axios.get(
-        `${API}/api/doctor/patients/${patientId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        `${API_URL}/api/doctor/patients/${patientId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setPatientDetails(data);
     } catch (e) {
-      const msg =
-        e?.response?.data?.message || "Failed to load patient details";
+      const msg = e?.response?.data?.message || "Failed to load patient details";
       setError(msg);
       setPatientDetails(null);
     } finally {
@@ -150,15 +187,13 @@ export default function DoctorPatients({ onOpenChat }) {
 
     if (filter === "pending")
       list = list.filter((x) => (x.pendingCount || 0) > 0);
+
     if (filter === "completed")
       list = list.filter(
         (x) => (x.lastAppointment?.status || "").toLowerCase() === "completed"
       );
-    if (filter === "recent") {
-      // already sorted from server by createdAt desc, so just keep as-is
-      // (optional: slice)
-      list = list.slice(0, 20);
-    }
+
+    if (filter === "recent") list = list.slice(0, 20);
 
     return list;
   }, [patients, search, filter]);
@@ -166,46 +201,43 @@ export default function DoctorPatients({ onOpenChat }) {
   const onSelectPatient = (item) => {
     setSelected(item);
     setPatientDetails(null);
+
     const pid = item?.patient?._id;
     if (pid) fetchPatientDetails(pid);
   };
 
-  const selectedPatient = patientDetails?.patient;
+  // Prefer details patient (fresh), fallback to selected.patient
+  const selectedPatient = patientDetails?.patient || selected?.patient || null;
   const appointments = patientDetails?.appointments || [];
+
+  const selectedAvatar = selectedPatient?.profileImage
+    ? buildImgUrl(selectedPatient.profileImage)
+    : avatarFallback(selectedPatient?.firstName, selectedPatient?.lastName);
 
   return (
     <div className="p-6 min-h-screen">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-5 flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-blue-50 dark:bg-gray-800">
-              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        <Panel
+          title="My Patients"
+          subtitle="Only patients who booked at least one appointment with you will appear here."
+          icon={Users}
+          right={
+            <button
+              onClick={fetchPatients}
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm inline-flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingList ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          }
+        >
+          {error ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+              {error}
             </div>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                My Patients
-              </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Only patients who booked at least one appointment with you will
-                appear here.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={fetchPatients}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm"
-          >
-            Refresh
-          </button>
-        </div>
-
-        {error ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
-            {error}
-          </div>
-        ) : null}
+          ) : null}
+        </Panel>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Patient list */}
@@ -259,8 +291,7 @@ export default function DoctorPatients({ onOpenChat }) {
                     No patients yet
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Patients will appear here after they book an appointment
-                    with you.
+                    Patients will appear here after they book an appointment with you.
                   </p>
                 </div>
               ) : (
@@ -268,6 +299,10 @@ export default function DoctorPatients({ onOpenChat }) {
                   {filteredPatients.map((item) => {
                     const p = item.patient || {};
                     const isActive = selected?.patient?._id === p._id;
+
+                    const avatarSrc = p.profileImage
+                      ? buildImgUrl(p.profileImage)
+                      : avatarFallback(p.firstName, p.lastName);
 
                     return (
                       <button
@@ -279,36 +314,48 @@ export default function DoctorPatients({ onOpenChat }) {
                             : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                        {/* TOP ROW */}
+                        <div className="flex items-center gap-3">
+                          {/* ✅ Avatar */}
+                          <img
+                            src={avatarSrc}
+                            alt={`${p.firstName} ${p.lastName}`}
+                            className="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+                            onError={(e) => {
+                              e.currentTarget.src = avatarFallback(p.firstName, p.lastName);
+                            }}
+                          />
+
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
                               {p.firstName} {p.lastName}
                             </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                               {p.email || "—"}
                             </p>
                           </div>
 
-                          <div className="text-right">
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-right text-xs text-gray-500 dark:text-gray-400">
+                            <div>
                               Total:{" "}
-                              <span className="font-semibold">
+                              <span className="font-semibold text-gray-900 dark:text-gray-100">
                                 {item.totalAppointments || 0}
                               </span>
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div>
                               Pending:{" "}
-                              <span className="font-semibold">
+                              <span className="font-semibold text-gray-900 dark:text-gray-100">
                                 {item.pendingCount || 0}
                               </span>
                             </div>
                           </div>
                         </div>
 
+                        {/* BOTTOM ROW */}
                         <div className="mt-2 flex items-center justify-between">
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Last: {item.lastAppointment?.date || "—"} •{" "}
-                            {item.lastAppointment?.timeSlot || ""}
+                            Last: {formatDate(item.lastAppointment?.date)} •{" "}
+                            {item.lastAppointment?.timeSlot || "—"}
                           </p>
                           <StatusBadge status={item.lastAppointment?.status} />
                         </div>
@@ -322,8 +369,8 @@ export default function DoctorPatients({ onOpenChat }) {
 
           {/* Right: Details */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Details header */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+              {/* Header gradient */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -338,24 +385,24 @@ export default function DoctorPatients({ onOpenChat }) {
 
                   <div className="flex gap-2">
                     <button
-                      className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2"
+                      className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2 disabled:opacity-50"
                       disabled={!selectedPatient}
                       onClick={() => {
-                        const pid = selectedPatient?._id; // ✅ this is the patient id
-                        if (!pid) return alert("Select a patient first");
-                        onOpenChat(pid); // ✅ send id to dashboard
+                        const pid = selectedPatient?._id;
+                        if (!pid) return;
+                        onOpenChat?.(pid);
                       }}
                     >
                       <MessageSquare className="w-4 h-4" />
                       Chat
                     </button>
+
                     <button
-                      className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2"
+                      className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2 disabled:opacity-50"
                       disabled={!selectedPatient}
-                      title={!selectedPatient ? "Select a patient first" : ""}
                       onClick={() => {
                         if (!selectedPatient) return;
-                        alert("Reports feature: next step (we can connect it)");
+                        alert("Reports feature: connect next");
                       }}
                     >
                       <FileText className="w-4 h-4" />
@@ -373,87 +420,90 @@ export default function DoctorPatients({ onOpenChat }) {
                       Select a patient to view details
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Choose a patient from the left panel. You’ll see their
-                      profile and your appointment history.
+                      Choose a patient from the left panel. You’ll see their profile and your appointment history.
                     </p>
                   </div>
                 ) : loadingDetails ? (
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     Loading patient details...
                   </div>
+                ) : !selectedPatient ? (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                    <p className="text-sm text-gray-700 dark:text-gray-200">
+                      Patient details not available.
+                    </p>
+                  </div>
                 ) : (
                   <>
-                    {/* Profile card */}
-                    <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-800 flex items-center justify-center border border-gray-300 dark:border-gray-700">
-                      {patientDetails?.patient?.profileImage ? (
-                        <img
-                          src={`http://localhost:5000${patientDetails.patient.profileImage}`}
-                          alt="Patient"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="font-bold text-gray-600 dark:text-gray-300">
-                          {patientDetails?.patient?.firstName?.[0] || "P"}
-                          {patientDetails?.patient?.lastName?.[0] || ""}
-                        </span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                          {selectedPatient?.firstName}{" "}
-                          {selectedPatient?.lastName}
+                    {/* ✅ Profile header row (avatar + name + email) */}
+                    <div className="flex items-center gap-4 mb-5">
+                      <img
+                        src={selectedAvatar}
+                        alt="Patient"
+                        className="w-14 h-14 rounded-full object-cover border border-gray-300 dark:border-gray-700"
+                        onError={(e) => {
+                          e.currentTarget.src = avatarFallback(
+                            selectedPatient?.firstName,
+                            selectedPatient?.lastName
+                          );
+                        }}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate">
+                          {selectedPatient.firstName} {selectedPatient.lastName}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {selectedPatient?.email || "—"}
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {selectedPatient.email || "—"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* ✅ Profile cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* left card */}
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          Patient Info
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-2">
-                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/150 text-xs border border-gray-200 dark:border-gray-700">
-                            Age: <b>{selectedPatient?.age ?? "—"}</b>
-                          </span>
-                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/150 text-xs border border-gray-200 dark:border-gray-700">
-                            Gender: <b>{selectedPatient?.gender || "—"}</b>
-                          </span>
-                          <span className="px-2 py-1 rounded-md bg-white/70 dark:bg-gray-900/150 text-xs border border-gray-200 dark:border-gray-700">
-                            Blood: <b>{selectedPatient?.bloodType || "—"}</b>
-                          </span>
+                          <Pill label="Age" value={selectedPatient.age} />
+                          <Pill label="Gender" value={selectedPatient.gender} />
+                          <Pill label="Blood" value={selectedPatient.bloodType} />
                         </div>
-                        {selectedPatient?.injuryCondition ? (
-                          <div className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-gray-800 border border-amber-200 dark:border-gray-700">
+
+                        {selectedPatient.injuryCondition ? (
+                          <div className="mt-4 inline-flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-gray-800 border border-amber-200 dark:border-gray-700 w-full">
                             <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                              Condition
+                              Condition:
                             </span>
                             <span className="text-xs text-amber-900 dark:text-gray-200">
                               {selectedPatient.injuryCondition}
                             </span>
                           </div>
                         ) : (
-                          <div className="mt-3 text-xs text-gray-400">
-                            Condition: —
-                          </div>
+                          <div className="mt-4 text-xs text-gray-400">Condition: —</div>
                         )}
                       </div>
 
-                      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                      {/* right card */}
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                           Health Snapshot
                         </p>
 
                         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/150 border border-gray-200 dark:border-gray-700">
-                            Height: <b>{selectedPatient?.height ?? "—"}</b>
+                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700">
+                            Height: <b>{selectedPatient.height ?? "—"}</b>
                           </div>
-                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/150 border border-gray-200 dark:border-gray-700">
-                            Weight: <b>{selectedPatient?.weight ?? "—"}</b>
+                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700">
+                            Weight: <b>{selectedPatient.weight ?? "—"}</b>
                           </div>
-                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/150 border border-gray-200 dark:border-gray-700 col-span-2">
+                          <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 col-span-2">
                             Joined:{" "}
                             <b>
-                              {selectedPatient?.createdAt
-                                ? new Date(
-                                    selectedPatient.createdAt
-                                  ).toLocaleDateString()
+                              {selectedPatient.createdAt
+                                ? new Date(selectedPatient.createdAt).toLocaleDateString()
                                 : "—"}
                             </b>
                           </div>
@@ -461,7 +511,7 @@ export default function DoctorPatients({ onOpenChat }) {
                       </div>
                     </div>
 
-                    {/* Appointment history */}
+                    {/* ✅ Appointment history */}
                     <div className="mt-6">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                         <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -472,7 +522,7 @@ export default function DoctorPatients({ onOpenChat }) {
                       </p>
 
                       {appointments.length === 0 ? (
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mt-3">
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mt-3 border border-gray-200 dark:border-gray-700">
                           <p className="text-sm text-gray-700 dark:text-gray-200">
                             No appointment history found.
                           </p>
@@ -487,7 +537,7 @@ export default function DoctorPatients({ onOpenChat }) {
                               <div className="flex items-start justify-between gap-3">
                                 <div>
                                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                    {a.date} • {a.timeSlot}
+                                    {formatDate(a.date)} • {a.timeSlot || "—"}
                                   </p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                     Reason: {a.reason || "—"}
@@ -505,7 +555,7 @@ export default function DoctorPatients({ onOpenChat }) {
               </div>
             </div>
 
-            
+            {/* extra space / future panels */}
           </div>
         </div>
       </div>

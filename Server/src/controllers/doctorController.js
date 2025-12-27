@@ -60,7 +60,7 @@ export const getMyPatientDetails = async (req, res) => {
 
     // Patient profile
     const patient = await User.findById(patientId).select(
-      "firstName lastName email injuryCondition age gender bloodType height weight createdAt"
+      "firstName lastName email injuryCondition age gender bloodType height weight createdAt profileImage"
     );
 
     if (!patient) return res.status(404).json({ message: "Patient not found" });
