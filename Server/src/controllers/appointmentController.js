@@ -1,22 +1,25 @@
-const Appointment = require('../models/Appointment');
+import Appointment from "../models/Appointment.js";
 
-// 1. Book Appointment (Patient)
-exports.bookAppointment = async (req, res) => {
+/**
+ * 1) Book Appointment (Patient)
+ */
+export const bookAppointment = async (req, res) => {
   try {
     const { doctorId, date, timeSlot } = req.body;
-    const patientId = req.user.id; // Get from authenticated user
+    const patientId = req.user._id; // support both
 
-    // Validate required fields
     if (!doctorId || !date || !timeSlot) {
-      return res.status(400).json({ error: "Doctor, date, and time slot are required" });
+      return res
+        .status(400)
+        .json({ error: "Doctor, date, and time slot are required" });
     }
 
-    // Check for duplicate booking (same doctor, date, time)
+    // Check for duplicate booking (same doctor, date, time) except cancelled
     const existingAppointment = await Appointment.findOne({
       doctorId,
       date,
       timeSlot,
-      status: { $ne: "Cancelled" }
+      status: { $ne: "Cancelled" },
     });
 
     if (existingAppointment) {
@@ -27,28 +30,35 @@ exports.bookAppointment = async (req, res) => {
       patientId,
       doctorId,
       date,
-      timeSlot
+      timeSlot,
     });
 
     const savedAppt = await newAppointment.save();
-    
-    res.status(201).json({ message: "Booking Successful!", data: savedAppt });
 
+    res.status(201).json({ message: "Booking Successful!", data: savedAppt });
   } catch (error) {
     console.error("Booking error:", error);
     res.status(500).json({ error: "Booking Failed" });
   }
 };
 
-// 2. Get Doctor's Appointments (Doctor)
-exports.getDoctorAppointments = async (req, res) => {
+/**
+ * 2) Get Doctor Appointments (Doctor)
+ * Supports optional date filter: /api/appointments/doctor-appointments?date=YYYY-MM-DD
+ */
+export const getDoctorAppointments = async (req, res) => {
   try {
-    const doctorId = req.params.doctorId || req.user.id;
-    
-    const appointments = await Appointment.find({ doctorId })
-      .populate('patientId', 'name email phone')
-      .sort({ date: -1, timeSlot: 1 });
-      
+    const doctorId = req.user._id;
+    const { date } = req.query;
+
+    const filter = { doctorId };
+    if (date) filter.date = date;
+
+    const appointments = await Appointment.find(filter)
+      // IMPORTANT: your User model uses firstName/lastName, not "name"
+      .populate("patientId", "firstName lastName email phone profileImage")
+      .sort({ date: 1, timeSlot: 1 });
+
     res.status(200).json(appointments);
   } catch (error) {
     console.error("Fetch error:", error);
@@ -56,15 +66,17 @@ exports.getDoctorAppointments = async (req, res) => {
   }
 };
 
-// 3. Get Patient's Appointments (Patient)
-exports.getPatientAppointments = async (req, res) => {
+/**
+ * 3) Get Patient Appointments (Patient)
+ */
+export const getPatientAppointments = async (req, res) => {
   try {
-    const patientId = req.user.id;
-    
+    const patientId = req.user._id;
+
     const appointments = await Appointment.find({ patientId })
-      .populate('doctorId', 'name specialization')
-      .sort({ date: -1, timeSlot: 1 });
-      
+      .populate("doctorId", "firstName lastName specialization profileImage")
+      .sort({ date: 1, timeSlot: 1 });
+
     res.status(200).json(appointments);
   } catch (error) {
     console.error("Fetch error:", error);
@@ -72,8 +84,11 @@ exports.getPatientAppointments = async (req, res) => {
   }
 };
 
-// 4. Update Appointment Status (Doctor)
-exports.updateAppointmentStatus = async (req, res) => {
+/**
+ * 4) Update Appointment Status (Doctor)
+ * PATCH /api/appointments/:appointmentId/status  body: { status }
+ */
+export const updateAppointmentStatus = async (req, res) => {
   try {
     const { appointmentId } = req.params;
     const { status } = req.body;
@@ -87,7 +102,7 @@ exports.updateAppointmentStatus = async (req, res) => {
       appointmentId,
       { status },
       { new: true }
-    );
+    ).populate("patientId", "firstName lastName email phone profileImage");
 
     if (!appointment) {
       return res.status(404).json({ error: "Appointment not found" });
@@ -100,8 +115,11 @@ exports.updateAppointmentStatus = async (req, res) => {
   }
 };
 
-// 5. Cancel Appointment (Patient/Doctor)
-exports.cancelAppointment = async (req, res) => {
+/**
+ * 5) Cancel Appointment (Patient/Doctor)
+ * PATCH /api/appointments/:appointmentId/cancel
+ */
+export const cancelAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.params;
 
@@ -109,21 +127,26 @@ exports.cancelAppointment = async (req, res) => {
       appointmentId,
       { status: "Cancelled" },
       { new: true }
-    );
+    ).populate("patientId", "firstName lastName email phone profileImage");
 
     if (!appointment) {
       return res.status(404).json({ error: "Appointment not found" });
     }
 
-    res.status(200).json({ message: "Appointment cancelled", data: appointment });
+    res
+      .status(200)
+      .json({ message: "Appointment cancelled", data: appointment });
   } catch (error) {
     console.error("Cancel error:", error);
     res.status(500).json({ error: "Error cancelling appointment" });
   }
 };
 
-// 6. Get Available Time Slots for a Doctor on a Date
-exports.getAvailableSlots = async (req, res) => {
+/**
+ * 6) Get Available Time Slots for a Doctor on a Date
+ * GET /api/appointments/available-slots?doctorId=...&date=YYYY-MM-DD
+ */
+export const getAvailableSlots = async (req, res) => {
   try {
     const { doctorId, date } = req.query;
 
@@ -131,25 +154,75 @@ exports.getAvailableSlots = async (req, res) => {
       return res.status(400).json({ error: "Doctor ID and date are required" });
     }
 
-    // All possible time slots
     const allSlots = [
-      "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-      "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"
+      "9:00 AM",
+      "9:30 AM",
+      "10:00 AM",
+      "10:30 AM",
+      "11:00 AM",
+      "11:30 AM",
+      "2:00 PM",
+      "2:30 PM",
+      "3:00 PM",
+      "3:30 PM",
+      "4:00 PM",
+      "4:30 PM",
     ];
 
-    // Find booked slots
     const bookedAppointments = await Appointment.find({
       doctorId,
       date,
-      status: { $ne: "Cancelled" }
+      status: { $ne: "Cancelled" },
     });
 
-    const bookedSlots = bookedAppointments.map(apt => apt.timeSlot);
-    const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
+    const bookedSlots = bookedAppointments.map((apt) => apt.timeSlot);
+    const availableSlots = allSlots.filter((slot) => !bookedSlots.includes(slot));
 
     res.status(200).json({ availableSlots, bookedSlots });
   } catch (error) {
     console.error("Slots error:", error);
     res.status(500).json({ error: "Error fetching available slots" });
+  }
+};
+
+/**
+ * 7) Reschedule Appointment (Doctor)
+ * PATCH /api/appointments/:appointmentId/reschedule  body: { date, timeSlot }
+ */
+export const rescheduleAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { date, timeSlot } = req.body;
+
+    if (!date || !timeSlot) {
+      return res.status(400).json({ error: "date and timeSlot are required" });
+    }
+
+    // prevent double booking when rescheduling
+    const appt = await Appointment.findById(appointmentId);
+    if (!appt) return res.status(404).json({ error: "Appointment not found" });
+
+    const conflict = await Appointment.findOne({
+      _id: { $ne: appointmentId },
+      doctorId: appt.doctorId,
+      date,
+      timeSlot,
+      status: { $ne: "Cancelled" },
+    });
+
+    if (conflict) {
+      return res.status(409).json({ error: "That new time slot is already booked" });
+    }
+
+    const updated = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { date, timeSlot },
+      { new: true }
+    ).populate("patientId", "firstName lastName email phone profileImage");
+
+    res.status(200).json({ message: "Appointment rescheduled", data: updated });
+  } catch (error) {
+    console.error("Reschedule error:", error);
+    res.status(500).json({ error: "Error rescheduling appointment" });
   }
 };
