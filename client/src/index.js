@@ -5,6 +5,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ThemeProvider } from './context/ThemeContext';
 import "react-calendar/dist/Calendar.css";
+import "./styles/calendarOverride.css";
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

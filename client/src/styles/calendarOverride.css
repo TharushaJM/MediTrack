@@ -1,0 +1,60 @@
+/* Make calendar inherit our card background */
+.react-calendar {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+/* ---------- DARK THEME ---------- */
+.rc-dark.react-calendar {
+  color: #e5e7eb; /* gray-200 */
+}
+
+/* header nav */
+.rc-dark .react-calendar__navigation button {
+  color: #e5e7eb;
+  background: transparent;
+  border-radius: 12px;
+}
+.rc-dark .react-calendar__navigation button:enabled:hover,
+.rc-dark .react-calendar__navigation button:enabled:focus {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* weekday row */
+.rc-dark .react-calendar__month-view__weekdays {
+  color: #94a3b8; /* slate-400 */
+}
+
+/* day tiles */
+.rc-dark .react-calendar__tile {
+  background: transparent;
+  color: #e5e7eb;
+  border-radius: 12px;
+}
+.rc-dark .react-calendar__tile:enabled:hover,
+.rc-dark .react-calendar__tile:enabled:focus {
+  background: rgba(56, 189, 248, 0.18); /* sky glow */
+}
+
+/* today */
+.rc-dark .react-calendar__tile--now {
+  background: rgba(34, 197, 94, 0.18); /* green glow */
+}
+
+/* selected */
+.rc-dark .react-calendar__tile--active {
+  background: rgba(56, 189, 248, 0.35); /* sky */
+  color: #ffffff;
+}
+
+/* neighboring month */
+.rc-dark .react-calendar__month-view__days__day--neighboringMonth {
+  color: #475569; /* slate-600 */
+}
+
+/* optional: weekend not red */
+.rc-dark .react-calendar__month-view__days__day--weekend {
+  color: #e5e7eb;
+}
