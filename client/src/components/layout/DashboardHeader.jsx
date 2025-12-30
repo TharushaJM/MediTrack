@@ -4,6 +4,8 @@ import { Bell, User, CheckCircle2, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../context/ThemeContext";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 export default function DashboardHeader() {
   const [user, setUser] = useState(null);
   const [greeting, setGreeting] = useState("Good morning");
@@ -30,6 +32,17 @@ export default function DashboardHeader() {
     }
   }, []);
 
+  //User Image
+  const getProfileImage = () => {
+    if (user?.profileImage) {
+      if (user.profileImage.startsWith("http")) return user.profileImage;
+      return `${API_URL}${user.profileImage}`;
+    }
+    return null;
+  };
+
+  const profileImage = getProfileImage();
+
   async function fetchUser(token) {
     try {
       const { data } = await axios.get(
@@ -51,7 +64,7 @@ export default function DashboardHeader() {
     try {
       const token = localStorage.getItem("token");
       const { data } = await axios.get(
-        "http://localhost:5000/api/notifications/unread/count",
+         `${API_URL}/api/notifications/unread/count`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setUnread(data.count);
@@ -217,12 +230,20 @@ export default function DashboardHeader() {
           </button>
         </div>
 
-        {/* User Profile Icon */}
-        {user && (
-          <div className="w-9 h-9 bg-blue-500 dark:bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold shadow-md hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors cursor-pointer">
-            {user.firstName?.charAt(0).toUpperCase() || user.name?.charAt(0).toUpperCase() || "U"}
-          </div>
-        )}
+        {/* User Profile (image OR initials) */}
+        {user &&
+          (profileImage ? (
+            <img
+              src={profileImage}
+              alt="Profile"
+              className="w-9 h-9 rounded-full object-cover shadow-md cursor-pointer"
+            />
+          ) : (
+            <div className="w-9 h-9 bg-blue-500 dark:bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold shadow-md hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors cursor-pointer">
+              {user.firstName?.charAt(0) || user.name?.charAt(0) || "U"}
+              {user.lastName?.charAt(0) || ""}
+            </div>
+          ))}
 
         {/* Notification Dropdown */}
         <AnimatePresence>
@@ -237,8 +258,10 @@ export default function DashboardHeader() {
                           shadow-lg rounded-xl p-4 z-50"
             >
               {/* HEADER */}
-              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700                                 ">  
-                <h3 className="font-semibold text-gray-700 dark:text-gray-200">Notifications</h3>
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700                                 ">
+                <h3 className="font-semibold text-gray-700 dark:text-gray-200">
+                  Notifications
+                </h3>
               </div>
 
               {/* LIST */}

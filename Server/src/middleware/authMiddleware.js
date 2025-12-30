@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 export const protect = async (req, res, next) => {
-  let token; // 
+  let token; //
 
   try {
     const auth = req.headers.authorization;
@@ -29,7 +29,9 @@ export const protect = async (req, res, next) => {
 
     // Attach user to request (without password)
     // Note: Ensure your JWT payload uses "id". If you signed with "userId", change this to decoded.userId
-    const user = await User.findById(decoded.id || decoded.userId).select("-password");
+    const user = await User.findById(decoded.id || decoded.userId).select(
+      "-password"
+    );
 
     if (!user) {
       return res
@@ -55,6 +57,12 @@ export const adminOnly = (req, res, next) => {
 export const doctorOnly = (req, res, next) => {
   if (!req.user || req.user.role !== "doctor") {
     return res.status(403).json({ message: "Doctor access only" });
+  }
+  next();
+};
+export const patientOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== "patient") {
+    return res.status(403).json({ message: "Patient access only" });
   }
   next();
 };

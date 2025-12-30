@@ -19,7 +19,8 @@ import FindDoctor from "./components/Dashboard/Patient/FindDoctor";
 import BookAppointment from "./components/Dashboard/Patient/BookAppointment";
 import MyAppointments from "./components/Dashboard/Patient/MyAppointments";
 import ProtectedRoute from "./components/ProtectedRoute";
-import PatientChat from "./components/Dashboard/Patient/PatientChat";
+import PatientChat from "./components/Dashboard/Patient/PatientChatPage";
+
 
 //  This wrapper helps control where Navbar appears
 function LayoutWrapper({ children }) {
@@ -142,7 +143,7 @@ export default function App() {
             }
           />
           <Route
-            path="/patient/chat/:doctorId"
+            path="/chat"
             element={
               <ProtectedRoute patientOnly={true}>
                 <DashboardLayout>
