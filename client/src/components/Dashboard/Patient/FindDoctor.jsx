@@ -366,7 +366,7 @@ export default function FindDoctor() {
         </div>
       )}
 
-      <div className="relative bg-gradient-to-r from-[#007BFF] to-[#0056b3] dark:from-gray-900 dark:to-gray-800 pb-32">
+      <div className="relative bg-gradient-to-r from-[#007BFF] to-[#0056b3] dark:from-gray-900 dark:to-gray-800 pb-0">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white"></div>
           <div className="absolute top-20 right-20 w-48 h-48 rounded-full bg-white"></div>

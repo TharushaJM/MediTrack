@@ -19,7 +19,10 @@ const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 /* ---------------- helpers ---------------- */
 
 const cleanToken = (t = "") =>
-  String(t).replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "").trim();
+  String(t)
+    .replace(/^"+|"+$/g, "")
+    .replace(/^'+|'+$/g, "")
+    .trim();
 
 // ✅ build correct url for image paths like "/uploads/profiles/xxx.jpg"
 const buildImgUrl = (imgPath) => {
@@ -159,7 +162,8 @@ export default function DoctorPatients({ onOpenChat }) {
       );
       setPatientDetails(data);
     } catch (e) {
-      const msg = e?.response?.data?.message || "Failed to load patient details";
+      const msg =
+        e?.response?.data?.message || "Failed to load patient details";
       setError(msg);
       setPatientDetails(null);
     } finally {
@@ -168,8 +172,13 @@ export default function DoctorPatients({ onOpenChat }) {
   };
 
   useEffect(() => {
-    fetchPatients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchPatients(); // load immediately
+
+    const interval = setInterval(() => {
+      fetchPatients(); // refresh every 30 seconds
+    }, 30000);
+
+    return () => clearInterval(interval); // cleanup
   }, []);
 
   const filteredPatients = useMemo(() => {
@@ -222,15 +231,6 @@ export default function DoctorPatients({ onOpenChat }) {
           title="My Patients"
           subtitle="Only patients who booked at least one appointment with you will appear here."
           icon={Users}
-          right={
-            <button
-              onClick={fetchPatients}
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm inline-flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingList ? "animate-spin" : ""}`} />
-              Refresh
-            </button>
-          }
         >
           {error ? (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
@@ -291,7 +291,8 @@ export default function DoctorPatients({ onOpenChat }) {
                     No patients yet
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Patients will appear here after they book an appointment with you.
+                    Patients will appear here after they book an appointment
+                    with you.
                   </p>
                 </div>
               ) : (
@@ -322,7 +323,10 @@ export default function DoctorPatients({ onOpenChat }) {
                             alt={`${p.firstName} ${p.lastName}`}
                             className="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-gray-700"
                             onError={(e) => {
-                              e.currentTarget.src = avatarFallback(p.firstName, p.lastName);
+                              e.currentTarget.src = avatarFallback(
+                                p.firstName,
+                                p.lastName
+                              );
                             }}
                           />
 
@@ -371,21 +375,20 @@ export default function DoctorPatients({ onOpenChat }) {
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-800">
               {/* Header gradient */}
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-slate-900 dark:to-slate-800 p-5">
+
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-white text-xl font-bold flex items-center gap-2">
                       <Stethoscope className="w-6 h-6" />
                       Patient Details
                     </h2>
-                    <p className="text-blue-100 text-sm mt-1">
-                      Profile + appointment history for selected patient
-                    </p>
+                    <p className="text-blue-100 text-sm mt-1"></p>
                   </div>
 
                   <div className="flex gap-2">
                     <button
-                      className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2 disabled:opacity-50"
+                      className="px-3 py-2 rounded-lg bg-white/20 hover:bg-white/25 dark:bg-white/10 dark:hover:bg-white/15 text-white text-sm inline-flex items-center gap-2"
                       disabled={!selectedPatient}
                       onClick={() => {
                         const pid = selectedPatient?._id;
@@ -420,7 +423,8 @@ export default function DoctorPatients({ onOpenChat }) {
                       Select a patient to view details
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Choose a patient from the left panel. You’ll see their profile and your appointment history.
+                      Choose a patient from the left panel. You’ll see their
+                      profile and your appointment history.
                     </p>
                   </div>
                 ) : loadingDetails ? (
@@ -466,10 +470,13 @@ export default function DoctorPatients({ onOpenChat }) {
                           Patient Info
                         </p>
 
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        <div className="mt-3 flex flex-wrap gap-2 dark:text-gray-100">
                           <Pill label="Age" value={selectedPatient.age} />
                           <Pill label="Gender" value={selectedPatient.gender} />
-                          <Pill label="Blood" value={selectedPatient.bloodType} />
+                          <Pill
+                            label="Blood"
+                            value={selectedPatient.bloodType}
+                          />
                         </div>
 
                         {selectedPatient.injuryCondition ? (
@@ -477,12 +484,14 @@ export default function DoctorPatients({ onOpenChat }) {
                             <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
                               Condition:
                             </span>
-                            <span className="text-xs text-amber-900 dark:text-gray-200">
+                            <span className="text-xs text-amber-900 dark:text-gray-100">
                               {selectedPatient.injuryCondition}
                             </span>
                           </div>
                         ) : (
-                          <div className="mt-4 text-xs text-gray-400">Condition: —</div>
+                          <div className="mt-4 text-xs text-gray-400 dark:text-gray-100">
+                            Condition: —
+                          </div>
                         )}
                       </div>
 
@@ -492,7 +501,7 @@ export default function DoctorPatients({ onOpenChat }) {
                           Health Snapshot
                         </p>
 
-                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs dark:text-gray-100">
                           <div className="p-3 rounded-lg bg-white/70 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700">
                             Height: <b>{selectedPatient.height ?? "—"}</b>
                           </div>
@@ -503,7 +512,9 @@ export default function DoctorPatients({ onOpenChat }) {
                             Joined:{" "}
                             <b>
                               {selectedPatient.createdAt
-                                ? new Date(selectedPatient.createdAt).toLocaleDateString()
+                                ? new Date(
+                                    selectedPatient.createdAt
+                                  ).toLocaleDateString()
                                 : "—"}
                             </b>
                           </div>
