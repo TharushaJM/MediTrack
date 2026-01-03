@@ -1,5 +1,7 @@
 import Appointment from "../models/Appointment.js";
 import User from "../models/User.js";
+import Report from "../models/Report.js";
+
 
 // GET /api/doctor/patients
 export const getMyPatients = async (req, res) => {
@@ -76,5 +78,28 @@ export const getMyPatientDetails = async (req, res) => {
   } catch (err) {
     console.error("getMyPatientDetails error:", err);
     res.status(500).json({ message: "Failed to fetch patient details" });
+  }
+};
+// GET /api/doctor/patients/:patientId/reports
+export const getMyPatientReports = async (req, res) => {
+  try {
+    const doctorId = req.user._id;
+    const { patientId } = req.params;
+
+    // SECURITY: doctor can only see this patient's reports if an appointment exists
+    const relationship = await Appointment.findOne({ doctorId, patientId });
+    if (!relationship) {
+      return res
+        .status(403)
+        .json({ message: "Access denied: no appointments with this patient" });
+    }
+
+    // ✅ reports belong to patient via "user"
+    const reports = await Report.find({ user: patientId }).sort({ createdAt: -1 });
+
+    res.json(reports);
+  } catch (err) {
+    console.error("getMyPatientReports error:", err);
+    res.status(500).json({ message: "Failed to fetch patient reports" });
   }
 };
