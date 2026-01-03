@@ -16,6 +16,11 @@ import {
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
+//for Report fetch
+const [showReports, setShowReports] = useState(false);
+const [reports, setReports] = useState([]);
+const [loadingReports, setLoadingReports] = useState(false);
+
 /* ---------------- helpers ---------------- */
 
 const cleanToken = (t = "") =>
@@ -24,7 +29,7 @@ const cleanToken = (t = "") =>
     .replace(/^'+|'+$/g, "")
     .trim();
 
-// ✅ build correct url for image paths like "/uploads/profiles/xxx.jpg"
+//  build correct url for image paths like "/uploads/profiles/xxx.jpg"
 const buildImgUrl = (imgPath) => {
   if (!imgPath) return "";
   if (imgPath.startsWith("http") || imgPath.startsWith("blob:")) return imgPath;
@@ -171,6 +176,26 @@ export default function DoctorPatients({ onOpenChat }) {
     }
   };
 
+  //get Patient Reports
+  const fetchPatientReports = async (patientId) => {
+    setError("");
+    setLoadingReports(true);
+    try {
+      const { data } = await axios.get(
+        `${API_URL}/api/doctor/patients/${patientId}/reports`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setReports(Array.isArray(data) ? data : []);
+    } catch (e) {
+      const msg = e?.response?.data?.message || "Failed to load reports";
+      setError(msg);
+      setReports([]);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
   useEffect(() => {
     fetchPatients(); // load immediately
 
@@ -210,6 +235,9 @@ export default function DoctorPatients({ onOpenChat }) {
   const onSelectPatient = (item) => {
     setSelected(item);
     setPatientDetails(null);
+
+    setShowReports(false);
+    setReports([]);
 
     const pid = item?.patient?._id;
     if (pid) fetchPatientDetails(pid);
@@ -376,7 +404,6 @@ export default function DoctorPatients({ onOpenChat }) {
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-800">
               {/* Header gradient */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-slate-900 dark:to-slate-800 p-5">
-
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-white text-xl font-bold flex items-center gap-2">
@@ -404,8 +431,10 @@ export default function DoctorPatients({ onOpenChat }) {
                       className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2 disabled:opacity-50"
                       disabled={!selectedPatient}
                       onClick={() => {
-                        if (!selectedPatient) return;
-                        alert("Reports feature: connect next");
+                        const pid = selectedPatient?._id;
+                        if (!pid) return;
+                        //  load reports
+                        setShowReports(true);
                       }}
                     >
                       <FileText className="w-4 h-4" />
@@ -439,7 +468,7 @@ export default function DoctorPatients({ onOpenChat }) {
                   </div>
                 ) : (
                   <>
-                    {/* ✅ Profile header row (avatar + name + email) */}
+                    {/*  Profile header row (avatar + name + email) */}
                     <div className="flex items-center gap-4 mb-5">
                       <img
                         src={selectedAvatar}
