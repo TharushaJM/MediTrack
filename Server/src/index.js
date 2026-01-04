@@ -23,6 +23,7 @@ import doctorRoutes from "./routes/doctorRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import "./cron/reminderCron.js";
 import patientRoutes from "./routes/patientRoutes.js";
+import consentRoutes from "./routes/consentRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -102,6 +103,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/doctor", doctorRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/patient", patientRoutes);
+app.use("/api/consents", consentRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("MediTrack backend running");

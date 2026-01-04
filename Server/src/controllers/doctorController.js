@@ -1,7 +1,7 @@
 import Appointment from "../models/Appointment.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
-
+import Consent from "../models/Consent.js";
 
 // GET /api/doctor/patients
 export const getMyPatients = async (req, res) => {
@@ -10,7 +10,10 @@ export const getMyPatients = async (req, res) => {
 
     // Find all appointments for this doctor, and populate patient info
     const appointments = await Appointment.find({ doctorId })
-      .populate("patientId", "firstName lastName email age gender bloodType profileImage")
+      .populate(
+        "patientId",
+        "firstName lastName email age gender bloodType profileImage"
+      )
       .sort({ createdAt: -1 });
 
     // Unique patients based on patientId
@@ -57,7 +60,9 @@ export const getMyPatientDetails = async (req, res) => {
     // SECURITY: doctor can only see this patient if an appointment exists
     const relationship = await Appointment.findOne({ doctorId, patientId });
     if (!relationship) {
-      return res.status(403).json({ message: "Access denied: no appointments with this patient" });
+      return res
+        .status(403)
+        .json({ message: "Access denied: no appointments with this patient" });
     }
 
     // Patient profile
@@ -68,8 +73,9 @@ export const getMyPatientDetails = async (req, res) => {
     if (!patient) return res.status(404).json({ message: "Patient not found" });
 
     // Appointment history ONLY between this doctor and this patient
-    const appointments = await Appointment.find({ doctorId, patientId })
-      .sort({ createdAt: -1 });
+    const appointments = await Appointment.find({ doctorId, patientId }).sort({
+      createdAt: -1,
+    });
 
     res.json({
       patient,
@@ -93,9 +99,22 @@ export const getMyPatientReports = async (req, res) => {
         .status(403)
         .json({ message: "Access denied: no appointments with this patient" });
     }
+    const consent = await Consent.findOne({
+      patientId,
+      doctorId,
+      status: "approved",
+    });
+
+    if (!consent) {
+      return res
+        .status(403)
+        .json({ message: "Patient has not shared reports with you" });
+    }
 
     // ✅ reports belong to patient via "user"
-    const reports = await Report.find({ user: patientId }).sort({ createdAt: -1 });
+    const reports = await Report.find({ user: patientId }).sort({
+      createdAt: -1,
+    });
 
     res.json(reports);
   } catch (err) {
