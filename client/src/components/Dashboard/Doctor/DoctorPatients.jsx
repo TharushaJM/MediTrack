@@ -16,10 +16,7 @@ import {
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-//for Report fetch
-const [showReports, setShowReports] = useState(false);
-const [reports, setReports] = useState([]);
-const [loadingReports, setLoadingReports] = useState(false);
+
 
 /* ---------------- helpers ---------------- */
 
@@ -137,6 +134,12 @@ export default function DoctorPatients({ onOpenChat }) {
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all"); // all | recent | pending | completed
+
+  //Report UseStates
+    // ✅ PUT THESE HERE
+  const [showReports, setShowReports] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
 
   const token = cleanToken(localStorage.getItem("token") || "");
 
@@ -435,6 +438,8 @@ export default function DoctorPatients({ onOpenChat }) {
                         if (!pid) return;
                         //  load reports
                         setShowReports(true);
+                        fetchPatientReports(pid);
+                        
                       }}
                     >
                       <FileText className="w-4 h-4" />
