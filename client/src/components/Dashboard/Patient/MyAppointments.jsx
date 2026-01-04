@@ -15,13 +15,13 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function MyAppointments() {
   const navigate = useNavigate();
-  
+
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,14 +30,21 @@ export default function MyAppointments() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [cancelling, setCancelling] = useState(null);
 
+  //get consent from patient
+  const [doctorConsent, setDoctorConsent] = useState({});
+  const [consentLoading, setConsentLoading] = useState(false);
+
   // Fetch appointments
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/api/appointments/my-appointments`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `${API_URL}/api/appointments/my-appointments`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setAppointments(response.data);
       setFilteredAppointments(response.data);
     } catch (error) {
@@ -47,9 +54,52 @@ export default function MyAppointments() {
       setLoading(false);
     }
   };
+  //fetch Doctor
+  const fetchDoctorConsents = async () => {
+    try {
+      setConsentLoading(true);
+      const token = localStorage.getItem("token");
+
+      const res = await axios.get(`${API_URL}/api/consents/my-doctors`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const map = {};
+      (res.data || []).forEach((item) => {
+        const did = item?.doctor?._id;
+        if (did) map[did] = !!item.shared;
+      });
+
+      setDoctorConsent(map);
+    } catch (err) {
+      console.error("fetchDoctorConsents error:", err);
+    } finally {
+      setConsentLoading(false);
+    }
+  };
+
+  const setShareReports = async (doctorId, shared) => {
+    try {
+      // ✅ instant UI (fast feeling)
+      setDoctorConsent((prev) => ({ ...prev, [doctorId]: shared }));
+
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `${API_URL}/api/consents/set`,
+        { doctorId, shared },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (err) {
+      console.error("setShareReports error:", err);
+      //  revert if fail
+      setDoctorConsent((prev) => ({ ...prev, [doctorId]: !shared }));
+      alert("Failed to update report sharing");
+    }
+  };
 
   useEffect(() => {
     fetchAppointments();
+    fetchDoctorConsents();
   }, []);
 
   // Filter appointments
@@ -58,12 +108,18 @@ export default function MyAppointments() {
       setFilteredAppointments(appointments);
     } else if (filter === "upcoming") {
       setFilteredAppointments(
-        appointments.filter((apt) => apt.status === "Pending" || apt.status === "Confirmed")
+        appointments.filter(
+          (apt) => apt.status === "Pending" || apt.status === "Confirmed"
+        )
       );
     } else if (filter === "completed") {
-      setFilteredAppointments(appointments.filter((apt) => apt.status === "Completed"));
+      setFilteredAppointments(
+        appointments.filter((apt) => apt.status === "Completed")
+      );
     } else if (filter === "cancelled") {
-      setFilteredAppointments(appointments.filter((apt) => apt.status === "Cancelled"));
+      setFilteredAppointments(
+        appointments.filter((apt) => apt.status === "Cancelled")
+      );
     }
   }, [filter, appointments]);
 
@@ -132,7 +188,8 @@ export default function MyAppointments() {
 
   // Cancel appointment
   const handleCancel = async (appointmentId) => {
-    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+    if (!window.confirm("Are you sure you want to cancel this appointment?"))
+      return;
 
     try {
       setCancelling(appointmentId);
@@ -187,17 +244,21 @@ export default function MyAppointments() {
             {
               value: "upcoming",
               label: "Upcoming",
-              count: appointments.filter((a) => a.status === "Pending" || a.status === "Confirmed").length,
+              count: appointments.filter(
+                (a) => a.status === "Pending" || a.status === "Confirmed"
+              ).length,
             },
             {
               value: "completed",
               label: "Completed",
-              count: appointments.filter((a) => a.status === "Completed").length,
+              count: appointments.filter((a) => a.status === "Completed")
+                .length,
             },
             {
               value: "cancelled",
               label: "Cancelled",
-              count: appointments.filter((a) => a.status === "Cancelled").length,
+              count: appointments.filter((a) => a.status === "Cancelled")
+                .length,
             },
           ].map((tab) => (
             <button
@@ -222,7 +283,10 @@ export default function MyAppointments() {
           </div>
         ) : filteredAppointments.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-800">
-            <Calendar size={48} className="text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <Calendar
+              size={48}
+              className="text-gray-300 dark:text-gray-600 mx-auto mb-4"
+            />
             <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
               No Appointments Found
             </h3>
@@ -256,10 +320,12 @@ export default function MyAppointments() {
                     />
                     <div>
                       <h3 className="font-semibold text-gray-800 dark:text-white">
-                        Dr. {appointment.doctorId?.firstName} {appointment.doctorId?.lastName}
+                        Dr. {appointment.doctorId?.firstName}{" "}
+                        {appointment.doctorId?.lastName}
                       </h3>
                       <p className="text-sm text-[#007BFF]">
-                        {appointment.doctorId?.specialization || "General Physician"}
+                        {appointment.doctorId?.specialization ||
+                          "General Physician"}
                       </p>
                       {appointment.doctorId?.location && (
                         <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
@@ -278,7 +344,9 @@ export default function MyAppointments() {
                           <Calendar size={18} className="text-[#007BFF]" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{formatDate(appointment.date)}</p>
+                          <p className="text-sm font-medium">
+                            {formatDate(appointment.date)}
+                          </p>
                           <p className="text-xs text-gray-400">
                             {isUpcoming(appointment.date) ? "Upcoming" : "Past"}
                           </p>
@@ -289,7 +357,9 @@ export default function MyAppointments() {
                           <Clock size={18} className="text-[#28A745]" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{appointment.timeSlot}</p>
+                          <p className="text-sm font-medium">
+                            {appointment.timeSlot}
+                          </p>
                           <p className="text-xs text-gray-400">Time Slot</p>
                         </div>
                       </div>
@@ -304,38 +374,81 @@ export default function MyAppointments() {
                 {appointment.reason && (
                   <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      <span className="font-medium">Reason:</span> {appointment.reason}
+                      <span className="font-medium">Reason:</span>{" "}
+                      {appointment.reason}
                     </p>
                   </div>
                 )}
 
                 {/* Actions */}
-                <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  {/* Contact Doctor Button */}
-                  <button
-                    onClick={() => openContactModal(appointment)}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#007BFF] hover:bg-[#0056b3] text-white text-sm font-medium rounded-lg transition"
-                  >
-                    <MessageCircle size={16} />
-                    Contact Doctor
-                  </button>
+                {/* Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  {/* LEFT buttons */}
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => openContactModal(appointment)}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#007BFF] hover:bg-[#0056b3] text-white text-sm font-medium rounded-lg transition"
+                    >
+                      <MessageCircle size={16} />
+                      Contact Doctor
+                    </button>
 
-                  {/* Cancel Button */}
-                  {(appointment.status === "Pending" || appointment.status === "Confirmed") &&
-                    isUpcoming(appointment.date) && (
+                    {(appointment.status === "Pending" ||
+                      appointment.status === "Confirmed") &&
+                      isUpcoming(appointment.date) && (
+                        <button
+                          onClick={() => handleCancel(appointment._id)}
+                          disabled={cancelling === appointment._id}
+                          className="flex items-center gap-2 px-4 py-2 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition disabled:opacity-50"
+                        >
+                          {cancelling === appointment._id ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <XCircle size={16} />
+                          )}
+                          Cancel
+                        </button>
+                      )}
+                  </div>
+
+                  {/* RIGHT toggle */}
+                  {appointment.doctorId?._id && (
+                    <div className="flex items-center gap-2 ml-auto">
+                      <span className="text-xs text-gray-400">
+                        Share Reports
+                      </span>
+
                       <button
-                        onClick={() => handleCancel(appointment._id)}
-                        disabled={cancelling === appointment._id}
-                        className="flex items-center gap-2 px-4 py-2 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition disabled:opacity-50"
+                        disabled={consentLoading}
+                        onClick={() => {
+                          const did = appointment.doctorId._id;
+                          const current = !!doctorConsent[did];
+                          setShareReports(did, !current);
+                        }}
+                        className={`w-12 h-6 rounded-full transition relative border ${
+                          doctorConsent[appointment.doctorId._id]
+                            ? "bg-[#007BFF] border-[#0056b3]"
+                            : "bg-gray-700 border-gray-600"
+                        } ${
+                          consentLoading
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:brightness-110"
+                        }`}
                       >
-                        {cancelling === appointment._id ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <XCircle size={16} />
-                        )}
-                        Cancel
+                        <span
+                          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition ${
+                            doctorConsent[appointment.doctorId._id]
+                              ? "left-6"
+                              : "left-1"
+                          }`}
+                        />
                       </button>
-                    )}
+
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-300">
+                        {doctorConsent[appointment.doctorId._id] ? "ON" : "OFF"}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -361,7 +474,8 @@ export default function MyAppointments() {
                     {selectedAppointment.doctorId?.lastName}
                   </h2>
                   <p className="text-blue-100">
-                    {selectedAppointment.doctorId?.specialization || "General Physician"}
+                    {selectedAppointment.doctorId?.specialization ||
+                      "General Physician"}
                   </p>
                 </div>
               </div>
@@ -374,11 +488,12 @@ export default function MyAppointments() {
               </h3>
 
               <div className="space-y-3">
-                
                 {/* 1. Chat */}
                 <button
                   onClick={() => {
-                    navigate(`/patient/chat/${selectedAppointment.doctorId._id}`);
+                    navigate(
+                      `/patient/chat/${selectedAppointment.doctorId._id}`
+                    );
                     setShowContactModal(false);
                   }}
                   className="w-full flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl transition group"
@@ -387,7 +502,9 @@ export default function MyAppointments() {
                     <MessageCircle size={24} className="text-[#007BFF]" />
                   </div>
                   <div className="text-left">
-                    <p className="font-medium text-gray-800 dark:text-white">Send Message</p>
+                    <p className="font-medium text-gray-800 dark:text-white">
+                      Send Message
+                    </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Chat with your doctor
                     </p>
@@ -444,7 +561,9 @@ export default function MyAppointments() {
                       <Mail size={24} className="text-orange-600" />
                     </div>
                     <div className="text-left">
-                      <p className="font-medium text-gray-800 dark:text-white">Send Email</p>
+                      <p className="font-medium text-gray-800 dark:text-white">
+                        Send Email
+                      </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
                         {selectedAppointment.doctorId.email}
                       </p>
