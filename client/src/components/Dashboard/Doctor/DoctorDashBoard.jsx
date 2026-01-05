@@ -241,6 +241,14 @@ export default function DoctorDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeMenu]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAppointments(); // refresh appointments every 10s
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className={`min-h-screen ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
       {/* Sidebar */}
@@ -268,6 +276,15 @@ export default function DoctorDashboard() {
               setReportPatientId(patientId); // save selected patient id
               setActiveMenu("reports"); // open reports page
             }}
+          />
+        ) : activeMenu === "appointments" ? (
+          <DoctorAppointments
+            doctor={doctor}
+            appointments={appointments}
+            loading={appointmentsLoading}
+            onRefresh={fetchAppointments}
+            onStatusUpdate={handleStatusUpdate}
+            updatingStatus={updatingStatus}
           />
         ) : activeMenu === "reports" ? (
           <DoctorReportsPage
@@ -435,17 +452,7 @@ export default function DoctorDashboard() {
                     <Clock className="w-5 h-5 text-blue-500" />
                     Upcoming Appointments
                   </h3>
-                  <button
-                    onClick={fetchAppointments}
-                    className="text-sm text-blue-500 hover:text-blue-400 font-medium flex items-center gap-1"
-                  >
-                    <RefreshCw
-                      className={`w-4 h-4 ${
-                        appointmentsLoading ? "animate-spin" : ""
-                      }`}
-                    />
-                    Refresh
-                  </button>
+                  
                 </div>
 
                 <div className="space-y-3">

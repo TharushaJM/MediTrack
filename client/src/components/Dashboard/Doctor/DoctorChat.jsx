@@ -129,7 +129,7 @@ export default function DoctorChat({
 
     return () => {
       s.off("message:new", onMsg);
-      s.disconnect();
+      
     };
   }, [patientId, myUserId, onNewMessage]);
 

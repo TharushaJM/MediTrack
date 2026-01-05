@@ -52,7 +52,10 @@ export default function DoctorHeader({ doctor }) {
       setNotifications(res.data || []);
       return res.data || [];
     } catch (err) {
-      console.log("Fetch notifications error:", err?.response?.data || err.message);
+      console.log(
+        "Fetch notifications error:",
+        err?.response?.data || err.message
+      );
       setNotifications([]);
       return [];
     }
@@ -187,9 +190,17 @@ export default function DoctorHeader({ doctor }) {
             aria-label="Toggle dark mode"
           >
             {darkMode ? (
-              <Sun className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-600"}`} />
+              <Sun
+                className={`w-5 h-5 ${
+                  darkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              />
             ) : (
-              <Moon className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-600"}`} />
+              <Moon
+                className={`w-5 h-5 ${
+                  darkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              />
             )}
           </button>
 
@@ -197,16 +208,18 @@ export default function DoctorHeader({ doctor }) {
           <div className="relative" ref={notifRef}>
             <button
               onClick={handleBellClick}
-              className={`relative p-2 rounded-lg ${
-                darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
-              } transition`}
+              className="text-gray-600 hover:text-blue-600 relative transition dark:text-gray-200"
               aria-label="Notifications"
             >
-              <Bell className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-600"}`} />
+              <Bell
+                size={20}
+                className={`${unreadCount > 0 ? "animate-bounce" : ""}`}
+              />
 
+              {/* Red Badge */}
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 text-[11px] rounded-full bg-blue-600 text-white flex items-center justify-center">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full shadow">
+                  {unreadCount}
                 </span>
               )}
             </button>
@@ -251,7 +264,9 @@ export default function DoctorHeader({ doctor }) {
                           <p className="text-sm font-medium">{n.title}</p>
                           <p className="text-xs">{n.message}</p>
                           <span className="text-[10px] text-gray-400">
-                            {n.createdAt ? new Date(n.createdAt).toLocaleTimeString() : ""}
+                            {n.createdAt
+                              ? new Date(n.createdAt).toLocaleTimeString()
+                              : ""}
                           </span>
                         </div>
                       ))
@@ -269,7 +284,9 @@ export default function DoctorHeader({ doctor }) {
                         disabled={markingAll}
                         className={`text-xs px-3 py-1 rounded-md border border-blue-600 dark:border-blue-500
                           text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition
-                          ${markingAll ? "opacity-50 pointer-events-none" : ""}`}
+                          ${
+                            markingAll ? "opacity-50 pointer-events-none" : ""
+                          }`}
                       >
                         {markingAll ? "Marking..." : "Mark all as read"}
                       </button>
@@ -283,7 +300,9 @@ export default function DoctorHeader({ doctor }) {
                           disabled={clearing}
                           className={`text-xs px-3 py-1 rounded-md border border-red-600 dark:border-red-500
                             text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition
-                            ${clearing ? "opacity-50 pointer-events-none" : ""}`}
+                            ${
+                              clearing ? "opacity-50 pointer-events-none" : ""
+                            }`}
                         >
                           {clearing ? "Clearing..." : "Clear read"}
                         </button>
@@ -298,10 +317,18 @@ export default function DoctorHeader({ doctor }) {
           {/* Doctor Profile */}
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p className={`text-sm font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>
+              <p
+                className={`text-sm font-medium ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Dr. {doctor?.firstName} {doctor?.lastName}
               </p>
-              <p className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+              <p
+                className={`text-xs ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 {doctor?.specialization || "Cardiologist"}
               </p>
             </div>

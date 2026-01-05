@@ -140,7 +140,7 @@ export default function PatientChat({
 
     return () => {
       s.off("message:new", onMsg);
-      s.disconnect();
+     
     };
   }, [doctorId, myUserId, onNewMessage]);
 
