@@ -30,7 +30,7 @@ import { useTheme } from "../../../context/ThemeContext";
 import DoctorPatients from "./DoctorPatients";
 import DoctorChat from "./DoctorChat";
 import DoctorAppointments from "./DoctorAppointments";
-import DoctorPatientReports from "./DoctorPatientReports";
+import DoctorReportsPage from "./DoctorReportsPage";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -227,6 +227,13 @@ export default function DoctorDashboard() {
     }
   };
 
+  //for reports
+  const openReportsMenu = () => {
+    setReportPatientId(null); // clear old patient
+    setReportPatient(null);
+    setActiveMenu("reports"); //  open reports page
+  };
+
   useEffect(() => {
     if (activeMenu === "chat") {
       loadPatientsForChat();
@@ -237,7 +244,11 @@ export default function DoctorDashboard() {
   return (
     <div className={`min-h-screen ${darkMode ? "bg-gray-950" : "bg-gray-100"}`}>
       {/* Sidebar */}
-      <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+      <DoctorSidebar
+        activeMenu={activeMenu}
+        setActiveMenu={setActiveMenu}
+        onOpenReports={openReportsMenu}
+      />
 
       {/* Main Content */}
       <div className="ml-64">
@@ -253,17 +264,14 @@ export default function DoctorDashboard() {
               setChatPatientId(patientId);
               setActiveMenu("chat");
             }}
-            onOpenReports={(patientObj) => {
-              console.log("REPORTS CLICKED:", patientObj);
-              setReportPatientId(patientObj?._id);
-              setReportPatient(patientObj);
-              setActiveMenu("reports");
+            onOpenReports={(patientId) => {
+              setReportPatientId(patientId); // save selected patient id
+              setActiveMenu("reports"); // open reports page
             }}
           />
         ) : activeMenu === "reports" ? (
-          <DoctorPatientReports
-            patientId={reportPatientId}
-            patient={reportPatient}
+          <DoctorReportsPage
+            initialPatientId={reportPatientId} //  this is the “auto-select” patient
             onBack={() => setActiveMenu("patients")}
           />
         ) : activeMenu === "chat" ? (

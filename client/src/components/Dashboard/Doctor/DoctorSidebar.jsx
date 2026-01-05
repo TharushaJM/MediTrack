@@ -11,7 +11,7 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
 
-export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
+export default function DoctorSidebar({ activeMenu, setActiveMenu, onOpenReports }) {
   const navigate = useNavigate();
   const { darkMode } = useTheme();
 
@@ -74,7 +74,8 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
             icon={<FileText size={20} />}
             text="Reports"
             active={activeMenu === "reports"}
-            onClick={() => setActiveMenu("reports")}
+            onClick={() => (onOpenReports ? onOpenReports() : setActiveMenu("reports"))}
+
           />
           <NavItem
             icon={<UserCircle size={20} />}

@@ -196,6 +196,7 @@ export default function DoctorPatients({ onOpenChat, onOpenReports }) {
       setLoadingReports(false);
     }
   };
+  
 
   useEffect(() => {
     fetchPatients(); // load immediately
@@ -429,12 +430,12 @@ export default function DoctorPatients({ onOpenChat, onOpenReports }) {
                     </button>
 
                     <button
-                      className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2 disabled:opacity-50"
                       disabled={!selectedPatient}
                       onClick={() => {
                         if (!selectedPatient?._id) return;
-                        onOpenReports?.(selectedPatient);
+                        onOpenReports?.(selectedPatient._id);
                       }}
+                      className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2 disabled:opacity-50"
                     >
                       <FileText className="w-4 h-4" />
                       Reports
