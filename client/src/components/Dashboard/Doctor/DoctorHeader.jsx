@@ -1,25 +1,151 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell, Search, Moon, Sun } from "lucide-react";
+import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../../context/ThemeContext";
 
 export default function DoctorHeader({ doctor }) {
   const [searchQuery, setSearchQuery] = useState("");
   const { darkMode, toggleDarkMode } = useTheme();
 
+  // notifications
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [markingAll, setMarkingAll] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  const notifRef = useRef(null);
+
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
   // Get profile image URL
   const getProfileImage = () => {
     if (doctor?.profileImage) {
-      // Check if it's a full URL (from seeder with Unsplash)
-      if (doctor.profileImage.startsWith("http")) {
-        return doctor.profileImage;
-      }
-      // Local upload
-      return `http://localhost:5000${doctor.profileImage}`;
+      if (doctor.profileImage.startsWith("http")) return doctor.profileImage;
+      return `${API_URL}${doctor.profileImage}`;
     }
     return null;
   };
 
   const profileImage = getProfileImage();
+  const getToken = () => localStorage.getItem("token");
+
+  async function fetchUnreadCount() {
+    try {
+      const token = getToken();
+      const res = await axios.get(`${API_URL}/api/notifications/unread/count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUnreadCount(res.data.count || 0);
+    } catch (err) {
+      console.log("Unread count error:", err?.response?.data || err.message);
+    }
+  }
+
+  async function loadNotifications() {
+    try {
+      const token = getToken();
+      const res = await axios.get(`${API_URL}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotifications(res.data || []);
+      return res.data || [];
+    } catch (err) {
+      console.log("Fetch notifications error:", err?.response?.data || err.message);
+      setNotifications([]);
+      return [];
+    }
+  }
+
+  async function markOneRead(id) {
+    try {
+      const token = getToken();
+      await axios.put(
+        `${API_URL}/api/notifications/${id}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, read: true } : n))
+      );
+      setUnreadCount((c) => Math.max(0, c - 1));
+    } catch (err) {
+      console.log("Mark read error:", err?.response?.data || err.message);
+    }
+  }
+
+  async function markAllRead() {
+    try {
+      const token = getToken();
+      setMarkingAll(true);
+
+      await axios.put(
+        `${API_URL}/api/notifications/read-all`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      await loadNotifications();
+      await fetchUnreadCount();
+    } catch (err) {
+      console.log("Mark all read error:", err?.response?.data || err.message);
+    } finally {
+      setMarkingAll(false);
+    }
+  }
+
+  async function clearRead() {
+    try {
+      const token = getToken();
+      setClearing(true);
+
+      await axios.delete(`${API_URL}/api/notifications/clear-read`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      await loadNotifications();
+      await fetchUnreadCount();
+    } catch (err) {
+      console.log("Clear read error:", err?.response?.data || err.message);
+    } finally {
+      setClearing(false);
+    }
+  }
+
+  // Load unread count once
+  useEffect(() => {
+    fetchUnreadCount();
+  }, []);
+
+  // Poll every 10 seconds (same as patient header)
+  useEffect(() => {
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  async function handleBellClick() {
+    const next = !notifOpen;
+    setNotifOpen(next);
+    if (next) {
+      await loadNotifications();
+      await fetchUnreadCount();
+    }
+  }
+
+  const hasRead = notifications.some((n) => n.read);
 
   return (
     <header
@@ -50,7 +176,7 @@ export default function DoctorHeader({ doctor }) {
           </div>
         </div>
 
-        {/* Right - Notifications and Profile */}
+        {/* Right side */}
         <div className="flex items-center gap-4 ml-6">
           {/* Dark Mode Toggle */}
           <button
@@ -61,53 +187,125 @@ export default function DoctorHeader({ doctor }) {
             aria-label="Toggle dark mode"
           >
             {darkMode ? (
-              <Sun
-                className={`w-5 h-5 ${
-                  darkMode ? "text-gray-400" : "text-gray-600"
-                }`}
-              />
+              <Sun className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-600"}`} />
             ) : (
-              <Moon
-                className={`w-5 h-5 ${
-                  darkMode ? "text-gray-400" : "text-gray-600"
-                }`}
-              />
+              <Moon className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-600"}`} />
             )}
           </button>
 
-          {/* Notifications */}
-          <button
-            className={`relative p-2 rounded-lg ${
-              darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
-            } transition`}
-            aria-label="Notifications"
-          >
-            <Bell
-              className={`w-5 h-5 ${
-                darkMode ? "text-gray-400" : "text-gray-600"
-              }`}
-            />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full"></span>
-          </button>
+          {/* Notifications (patient-style dropdown) */}
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={handleBellClick}
+              className={`relative p-2 rounded-lg ${
+                darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
+              } transition`}
+              aria-label="Notifications"
+            >
+              <Bell className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-600"}`} />
+
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 text-[11px] rounded-full bg-blue-600 text-white flex items-center justify-center">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            <AnimatePresence>
+              {notifOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute right-0 top-14 w-80
+                             bg-white dark:bg-gray-800
+                             border dark:border-gray-700
+                             shadow-lg rounded-xl p-4 z-50"
+                >
+                  {/* HEADER */}
+                  <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200">
+                      Notifications
+                    </h3>
+                  </div>
+
+                  {/* LIST */}
+                  <div className="max-h-64 overflow-y-auto px-2 py-2">
+                    {notifications.length === 0 ? (
+                      <p className="text-gray-500 dark:text-gray-300 text-sm py-6 text-center">
+                        No notifications.
+                      </p>
+                    ) : (
+                      notifications.map((n) => (
+                        <div
+                          key={n._id}
+                          onClick={() => {
+                            if (!n.read) markOneRead(n._id);
+                          }}
+                          className={`p-3 rounded-lg mb-2 border dark:border-gray-700 last:mb-0 cursor-pointer ${
+                            n.read
+                              ? "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300"
+                              : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+                          }`}
+                        >
+                          <p className="text-sm font-medium">{n.title}</p>
+                          <p className="text-xs">{n.message}</p>
+                          <span className="text-[10px] text-gray-400">
+                            {n.createdAt ? new Date(n.createdAt).toLocaleTimeString() : ""}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* FOOTER BUTTONS */}
+                  {notifications.length > 0 && (
+                    <div className="flex justify-between items-center px-4 py-3 border-t dark:border-gray-700">
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await markAllRead();
+                        }}
+                        disabled={markingAll}
+                        className={`text-xs px-3 py-1 rounded-md border border-blue-600 dark:border-blue-500
+                          text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition
+                          ${markingAll ? "opacity-50 pointer-events-none" : ""}`}
+                      >
+                        {markingAll ? "Marking..." : "Mark all as read"}
+                      </button>
+
+                      {hasRead && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await clearRead();
+                          }}
+                          disabled={clearing}
+                          className={`text-xs px-3 py-1 rounded-md border border-red-600 dark:border-red-500
+                            text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition
+                            ${clearing ? "opacity-50 pointer-events-none" : ""}`}
+                        >
+                          {clearing ? "Clearing..." : "Clear read"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Doctor Profile */}
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <p
-                className={`text-sm font-medium ${
-                  darkMode ? "text-white" : "text-gray-900"
-                }`}
-              >
+              <p className={`text-sm font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>
                 Dr. {doctor?.firstName} {doctor?.lastName}
               </p>
-              <p
-                className={`text-xs ${
-                  darkMode ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
+              <p className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                 {doctor?.specialization || "Cardiologist"}
               </p>
             </div>
+
             {profileImage ? (
               <img
                 src={profileImage}
@@ -126,4 +324,3 @@ export default function DoctorHeader({ doctor }) {
     </header>
   );
 }
-

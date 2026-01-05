@@ -6,6 +6,7 @@ import {
   updateAppointmentStatus,
   rescheduleAppointment,
 } from "../controllers/appointmentController.js";
+import Notification from "../models/Notification.js";
 
 const router = express.Router();
 
@@ -33,7 +34,9 @@ router.post("/book", protect, async (req, res) => {
     });
 
     if (existingAppointment) {
-      return res.status(409).json({ error: "This time slot is already booked" });
+      return res
+        .status(409)
+        .json({ error: "This time slot is already booked" });
     }
 
     const newAppointment = new Appointment({
@@ -46,17 +49,26 @@ router.post("/book", protect, async (req, res) => {
 
     const savedAppt = await newAppointment.save();
 
+    // ✅ Create doctor notification (INSIDE the route)
+    await Notification.create({
+      user: doctorId, // notify doctor
+      title: "New appointment request",
+      message: `A patient booked an appointment on ${date} at ${timeSlot}.`,
+      read: false,
+    });
+
     const populatedAppt = await Appointment.findById(savedAppt._id).populate(
       "doctorId",
       "firstName lastName specialization profileImage"
     );
 
-    res
-      .status(201)
-      .json({ message: "Appointment booked successfully!", data: populatedAppt });
+    return res.status(201).json({
+      message: "Appointment booked successfully!",
+      data: populatedAppt,
+    });
   } catch (error) {
     console.error("Booking error:", error);
-    res.status(500).json({ error: "Failed to book appointment" });
+    return res.status(500).json({ error: "Failed to book appointment" });
   }
 });
 
@@ -72,10 +84,10 @@ router.get("/my-appointments", protect, async (req, res) => {
       )
       .sort({ date: -1, timeSlot: 1 });
 
-    res.status(200).json(appointments);
+    return res.status(200).json(appointments);
   } catch (error) {
     console.error("Fetch error:", error);
-    res.status(500).json({ error: "Error fetching appointments" });
+    return res.status(500).json({ error: "Error fetching appointments" });
   }
 });
 
@@ -142,12 +154,14 @@ router.get("/available-slots", protect, async (req, res) => {
     });
 
     const bookedSlots = bookedAppointments.map((apt) => apt.timeSlot);
-    const availableSlots = allSlots.filter((slot) => !bookedSlots.includes(slot));
+    const availableSlots = allSlots.filter(
+      (slot) => !bookedSlots.includes(slot)
+    );
 
-    res.status(200).json({ availableSlots, bookedSlots });
+    return res.status(200).json({ availableSlots, bookedSlots });
   } catch (error) {
     console.error("Slots error:", error);
-    res.status(500).json({ error: "Error fetching available slots" });
+    return res.status(500).json({ error: "Error fetching available slots" });
   }
 });
 

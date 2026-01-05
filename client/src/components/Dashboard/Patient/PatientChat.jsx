@@ -184,7 +184,7 @@ export default function PatientChat({
 
   const messagesBg = darkMode
     ? "bg-gray-900"
-    : "bg-gray-50";
+    : "bg-white";
 
   const inputBg = darkMode ? "bg-[#070b12] border-white/10" : "bg-white border-gray-200";
 
