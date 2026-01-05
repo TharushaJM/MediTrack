@@ -4,13 +4,23 @@ import { useTheme } from "../../../context/ThemeContext";
 import PatientChat from "./PatientChat";
 
 const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
-const cleanToken = (t) => (t || "").replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "").trim();
+const cleanToken = (t) =>
+  (t || "").replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "").trim();
+
+const formatClock = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
 
 export default function PatientChatPage() {
   const { darkMode } = useTheme();
   const token = useMemo(() => cleanToken(localStorage.getItem("token")), []);
+  const me = useMemo(() => JSON.parse(localStorage.getItem("user") || "{}"), []);
+  const myUserId = (me?.id || me?._id || "").toString();
 
-  const [doctors, setDoctors] = useState([]);
+  const [doctors, setDoctors] = useState([]); // { ...doctor, lastText, lastTime }
   const [loading, setLoading] = useState(false);
 
   const [selectedDoctorId, setSelectedDoctorId] = useState(null);
@@ -20,15 +30,19 @@ export default function PatientChatPage() {
     try {
       setLoading(true);
 
-      // ✅ IMPORTANT: this endpoint must return doctors from appointments
-      // e.g. res.json([{ doctor: {...}, lastAppointment: {...} }, ...])
       const { data } = await axios.get(`${API}/api/patient/doctors`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      // normalize shape + add preview fields
       const list = (Array.isArray(data) ? data : [])
-        .map((x) => x.doctor || x) // supports both shapes
-        .filter(Boolean);
+        .map((x) => x.doctor || x)
+        .filter(Boolean)
+        .map((d) => ({
+          ...d,
+          lastText: d.lastText || "",  // if backend doesn't send these, it's ok
+          lastTime: d.lastTime || "",
+        }));
 
       setDoctors(list);
 
@@ -59,12 +73,24 @@ export default function PatientChatPage() {
             darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
           }`}
         >
-          <div className={`p-4 border-b ${darkMode ? "border-gray-800" : "border-gray-200"}`}>
-            <h2 className={`font-semibold ${darkMode ? "text-gray-100" : "text-gray-900"}`}>
+          <div
+            className={`p-4 border-b ${
+              darkMode ? "border-gray-800" : "border-gray-200"
+            }`}
+          >
+            <h2
+              className={`font-semibold ${
+                darkMode ? "text-gray-100" : "text-gray-900"
+              }`}
+            >
               Doctors
             </h2>
-            <p className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-              Only doctors with appointments
+            <p
+              className={`text-xs ${
+                darkMode ? "text-gray-400" : "text-gray-500"
+              }`}
+            >
+              Select a doctor to chat
             </p>
           </div>
 
@@ -79,7 +105,9 @@ export default function PatientChatPage() {
               doctors.map((d) => {
                 const active = String(d._id) === String(selectedDoctorId);
                 const avatar = d.profileImage
-                  ? (d.profileImage.startsWith("http") ? d.profileImage : `${API}${d.profileImage}`)
+                  ? d.profileImage.startsWith("http")
+                    ? d.profileImage
+                    : `${API}${d.profileImage}`
                   : null;
 
                 return (
@@ -95,19 +123,41 @@ export default function PatientChatPage() {
                   >
                     <div className="flex items-center gap-3">
                       {avatar ? (
-                        <img src={avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover" />
+                        <img
+                          src={avatar}
+                          alt="avatar"
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
                           {(d.firstName?.[0] || "") + (d.lastName?.[0] || "")}
                         </div>
                       )}
 
-                      <div className="min-w-0">
-                        <div className={`font-medium ${darkMode ? "text-gray-100" : "text-gray-900"}`}>
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className={`font-medium ${
+                            darkMode ? "text-gray-100" : "text-gray-900"
+                          }`}
+                        >
                           Dr. {d.firstName} {d.lastName}
                         </div>
-                        <div className={`text-xs truncate ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-                          {d.specialization || "Doctor"}
+
+                        <div className="flex items-center justify-between gap-2">
+                          <div
+                            className={`text-xs truncate ${
+                              darkMode ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            {d.lastText || d.specialization || "No messages yet"}
+                          </div>
+                          <div
+                            className={`text-[11px] ${
+                              darkMode ? "text-gray-500" : "text-gray-400"
+                            }`}
+                          >
+                            {formatClock(d.lastTime)}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -124,7 +174,31 @@ export default function PatientChatPage() {
             <PatientChat
               doctorId={selectedDoctorId}
               doctor={selectedDoctor}
-              onNewMessage={() => {}}
+              onNewMessage={(msg) => {
+                // ✅ update preview + move doctor to top (same as Doctor side)
+                const sender = msg?.sender?._id?.toString?.() || "";
+                const receiver = msg?.receiver?._id?.toString?.() || "";
+                const otherId = sender === myUserId ? receiver : sender;
+
+                if (!otherId) return;
+
+                setDoctors((prev) => {
+                  const copy = [...prev];
+                  const i = copy.findIndex((x) => String(x._id) === String(otherId));
+                  if (i === -1) return prev;
+
+                  const item = copy.splice(i, 1)[0];
+                  item.lastText = msg.text || "";
+                  item.lastTime = msg.createdAt || new Date().toISOString();
+
+                  // keep selectedDoctor object fresh
+                  if (String(selectedDoctorId) === String(item._id)) {
+                    setSelectedDoctor(item);
+                  }
+
+                  return [item, ...copy];
+                });
+              }}
             />
           ) : (
             <div
@@ -132,7 +206,11 @@ export default function PatientChatPage() {
                 darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
               }`}
             >
-              <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+              <p
+                className={`text-sm ${
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                }`}
+              >
                 Select a doctor to start chatting.
               </p>
             </div>
