@@ -16,8 +16,6 @@ import {
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-
-
 /* ---------------- helpers ---------------- */
 
 const cleanToken = (t = "") =>
@@ -123,7 +121,7 @@ function Pill({ label, value }) {
 
 /* ---------------- main component ---------------- */
 
-export default function DoctorPatients({ onOpenChat }) {
+export default function DoctorPatients({ onOpenChat, onOpenReports }) {
   const [patients, setPatients] = useState([]); // from /api/doctor/patients
   const [selected, setSelected] = useState(null); // { patient, lastAppointment, totalAppointments... }
   const [patientDetails, setPatientDetails] = useState(null); // { patient, appointments }
@@ -136,7 +134,7 @@ export default function DoctorPatients({ onOpenChat }) {
   const [filter, setFilter] = useState("all"); // all | recent | pending | completed
 
   //Report UseStates
-    // ✅ PUT THESE HERE
+  // ✅ PUT THESE HERE
   const [showReports, setShowReports] = useState(false);
   const [reports, setReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(false);
@@ -434,12 +432,8 @@ export default function DoctorPatients({ onOpenChat }) {
                       className="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-sm inline-flex items-center gap-2 disabled:opacity-50"
                       disabled={!selectedPatient}
                       onClick={() => {
-                        const pid = selectedPatient?._id;
-                        if (!pid) return;
-                        //  load reports
-                        setShowReports(true);
-                        fetchPatientReports(pid);
-                        
+                        if (!selectedPatient?._id) return;
+                        onOpenReports?.(selectedPatient);
                       }}
                     >
                       <FileText className="w-4 h-4" />

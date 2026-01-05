@@ -2,6 +2,8 @@ import Appointment from "../models/Appointment.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
 import Consent from "../models/Consent.js";
+import mongoose from "mongoose";
+
 
 // GET /api/doctor/patients
 export const getMyPatients = async (req, res) => {
@@ -92,17 +94,28 @@ export const getMyPatientReports = async (req, res) => {
     const doctorId = req.user._id;
     const { patientId } = req.params;
 
-    // SECURITY: doctor can only see this patient's reports if an appointment exists
-    const relationship = await Appointment.findOne({ doctorId, patientId });
+    // ✅ prevent CastError
+    if (!mongoose.Types.ObjectId.isValid(patientId)) {
+      return res.status(400).json({ message: "Invalid patientId" });
+    }
+
+    // ✅ must have appointment relationship
+    const relationship = await Appointment.findOne({
+      doctorId: doctorId,
+      patientId: patientId,
+    });
+
     if (!relationship) {
       return res
         .status(403)
         .json({ message: "Access denied: no appointments with this patient" });
     }
+
+    // ✅ patient must share reports
     const consent = await Consent.findOne({
-      patientId,
-      doctorId,
-      status: "approved",
+      patientId: patientId,
+      doctorId: doctorId,
+      shared: true,
     });
 
     if (!consent) {
@@ -111,14 +124,17 @@ export const getMyPatientReports = async (req, res) => {
         .json({ message: "Patient has not shared reports with you" });
     }
 
-    // ✅ reports belong to patient via "user"
+    // ✅ load reports
     const reports = await Report.find({ user: patientId }).sort({
       createdAt: -1,
     });
 
-    res.json(reports);
+    return res.json(reports);
   } catch (err) {
-    console.error("getMyPatientReports error:", err);
-    res.status(500).json({ message: "Failed to fetch patient reports" });
+    console.log("🔥 getMyPatientReports FULL ERROR:", err);
+    return res.status(500).json({
+      message: err.message,
+      name: err.name,
+    });
   }
 };

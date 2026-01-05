@@ -30,6 +30,7 @@ import { useTheme } from "../../../context/ThemeContext";
 import DoctorPatients from "./DoctorPatients";
 import DoctorChat from "./DoctorChat";
 import DoctorAppointments from "./DoctorAppointments";
+import DoctorPatientReports from "./DoctorPatientReports";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -58,6 +59,9 @@ export default function DoctorDashboard() {
   const [patientsForChat, setPatientsForChat] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+
+  const [reportPatientId, setReportPatientId] = useState(null);
+  const [reportPatient, setReportPatient] = useState(null);
 
   // Mock data for patient visits
   const weeklyVisits = [
@@ -249,9 +253,19 @@ export default function DoctorDashboard() {
               setChatPatientId(patientId);
               setActiveMenu("chat");
             }}
+            onOpenReports={(patientObj) => {
+              console.log("REPORTS CLICKED:", patientObj);
+              setReportPatientId(patientObj?._id);
+              setReportPatient(patientObj);
+              setActiveMenu("reports");
+            }}
           />
-        ) : activeMenu === "appointments" ? ( 
-          <DoctorAppointments />
+        ) : activeMenu === "reports" ? (
+          <DoctorPatientReports
+            patientId={reportPatientId}
+            patient={reportPatient}
+            onBack={() => setActiveMenu("patients")}
+          />
         ) : activeMenu === "chat" ? (
           <div className="p-8">
             <div className="h-[650px] flex gap-4">
