@@ -115,6 +115,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    height: { type: Number, default: null },
+    weight: { type: Number, default: null },
 
     // Legacy field - keeping for backward compatibility
     licenseNumber: {

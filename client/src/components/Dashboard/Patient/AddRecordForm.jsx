@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Moon,
@@ -11,6 +11,14 @@ import {
   Brain,
   Pill,
 } from "lucide-react";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+const cleanToken = (t) =>
+  (t || "")
+    .replace(/^"+|"+$/g, "")
+    .replace(/^'+|'+$/g, "")
+    .trim();
 
 export default function AddRecordForm({ onClose, onCreated }) {
   const [form, setForm] = useState({
@@ -28,13 +36,17 @@ export default function AddRecordForm({ onClose, onCreated }) {
     height: "",
     weight: "",
   });
+
   const [saving, setSaving] = useState(false);
 
   const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  // ✅ BMI helpers
   const calcBMI = () => {
-    if (!form.height || !form.weight) return null;
-    const bmi = form.weight / ((form.height / 100) ** 2);
+    const h = Number(form.height);
+    const w = Number(form.weight);
+    if (!h || !w) return null;
+    const bmi = w / (h / 100) ** 2;
     return bmi.toFixed(1);
   };
 
@@ -47,16 +59,52 @@ export default function AddRecordForm({ onClose, onCreated }) {
     return "Obese";
   };
 
+  // ✅ Option A: Auto-fill height + weight from profile when modal opens
+  useEffect(() => {
+    const loadProfileForAutoFill = async () => {
+      try {
+        const token = cleanToken(localStorage.getItem("token"));
+        if (!token) return;
+
+        const { data } = await axios.get(`${API_URL}/api/users/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // ✅ only fill if form fields are empty (don't overwrite user typing)
+        setForm((prev) => ({
+          ...prev,
+          height:
+            (prev.height === "" || prev.height == null) && data?.height != null
+              ? String(data.height)
+              : prev.height,
+          weight:
+            (prev.weight === "" || prev.weight == null) && data?.weight != null
+              ? String(data.weight)
+              : prev.weight,
+        }));
+      } catch (error) {
+        console.log(
+          "Auto-fill profile error:",
+          error?.response?.data || error.message
+        );
+      }
+    };
+
+    loadProfileForAutoFill();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+
     try {
-      const token = localStorage.getItem("token");
+      const token = cleanToken(localStorage.getItem("token"));
       const { data } = await axios.post(
-        "http://localhost:5000/api/records",
+        `${API_URL}/api/records`,
         { ...form, bmi: calcBMI() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       onCreated(data);
       onClose();
     } catch (error) {
@@ -158,6 +206,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
               <Activity className="w-5 h-5 text-green-600 dark:text-green-400" />
               Daily Habits
             </h3>
+
             <div className="grid sm:grid-cols-2 gap-4">
               <HabitInput
                 icon={<Moon className="w-4 h-4 text-blue-500" />}
@@ -171,19 +220,30 @@ export default function AddRecordForm({ onClose, onCreated }) {
                 value={form.waterIntake}
                 onChange={(e) => update("waterIntake", e.target.value)}
               />
-              <select
-                className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 
-                  bg-white dark:bg-gray-700 
-                  text-gray-700 dark:text-gray-200 
-                  focus:ring-2 focus:ring-purple-400 dark:focus:ring-purple-500 
-                  focus:border-transparent outline-none"
-                value={form.meals}
-                onChange={(e) => update("meals", e.target.value)}
-              >
-                <option>Healthy</option>
-                <option>Average</option>
-                <option>Skipped</option>
-              </select>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
+                  Meals today
+                </label>
+
+                <div className="flex gap-2">
+                  {["Healthy", "Average", "Skipped"].map((x) => (
+                    <button
+                      key={x}
+                      type="button"
+                      onClick={() => update("meals", x)}
+                      className={`px-4 py-2 rounded-lg text-sm border transition ${
+                        form.meals === x
+                          ? "bg-purple-600 text-white border-purple-600"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600"
+                      }`}
+                    >
+                      {x}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <HabitInput
                 icon={<Activity className="w-4 h-4 text-purple-500" />}
                 placeholder="Exercise (min)"
@@ -199,20 +259,24 @@ export default function AddRecordForm({ onClose, onCreated }) {
               <Heart className="w-5 h-5 text-pink-500" />
               Body Stats
             </h3>
+
             <div className="grid sm:grid-cols-2 gap-4">
               <HabitInput
                 icon={<Ruler className="w-4 h-4 text-pink-500" />}
                 placeholder="Height (cm)"
                 value={form.height}
                 onChange={(e) => update("height", e.target.value)}
+                unit="cm"
               />
               <HabitInput
                 icon={<Weight className="w-4 h-4 text-amber-500" />}
                 placeholder="Weight (kg)"
                 value={form.weight}
                 onChange={(e) => update("weight", e.target.value)}
+                unit="kg"
               />
             </div>
+
             {form.height && form.weight && (
               <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
                 BMI:{" "}
@@ -230,6 +294,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
               <Pill className="w-5 h-5 text-indigo-600" />
               Any symptoms today?
             </h3>
+
             <textarea
               className="border border-gray-300 dark:border-gray-600 rounded-xl w-full p-3 
                 bg-white dark:bg-gray-700 
@@ -242,6 +307,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
               value={form.symptoms}
               onChange={(e) => update("symptoms", e.target.value)}
             />
+
             <label className="flex items-center mt-3 gap-2 text-sm text-gray-700 dark:text-gray-200">
               <input
                 type="checkbox"
@@ -264,6 +330,7 @@ export default function AddRecordForm({ onClose, onCreated }) {
             >
               Cancel
             </button>
+
             <button
               type="submit"
               disabled={saving}
@@ -282,12 +349,15 @@ export default function AddRecordForm({ onClose, onCreated }) {
   );
 }
 
-function HabitInput({ icon, placeholder, value, onChange }) {
+function HabitInput({ icon, placeholder, value, onChange, unit }) {
   return (
-    <div className="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 
+    <div
+      className="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 
       bg-white dark:bg-gray-700
-      focus-within:ring-2 focus-within:ring-blue-400 dark:focus-within:ring-blue-500 transition">
+      focus-within:ring-2 focus-within:ring-blue-400 dark:focus-within:ring-blue-500 transition"
+    >
       {icon}
+
       <input
         type="text"
         className="w-full bg-transparent outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
@@ -295,7 +365,13 @@ function HabitInput({ icon, placeholder, value, onChange }) {
         value={value}
         onChange={onChange}
       />
+
+      {/* ✅ unit label */}
+      {unit && (
+        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+          {unit}
+        </span>
+      )}
     </div>
   );
 }
-

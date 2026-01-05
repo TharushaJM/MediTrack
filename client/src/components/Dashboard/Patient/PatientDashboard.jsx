@@ -23,6 +23,8 @@ export default function PatientDashboard() {
   const [viewMode, setViewMode] = useState("simple");
   const [loading, setLoading] = useState(true);
 
+  const [profile, setProfile] = useState(null);
+
   // ✅ Fetch records
   async function fetchRecords() {
     try {
@@ -39,6 +41,26 @@ export default function PatientDashboard() {
       setLoading(false);
     }
   }
+
+  async function fetchProfile() {
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await axios.get(
+        "http://localhost:5000/api/users/profile",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setProfile(data);
+    } catch (err) {
+      console.error("Error fetching profile", err);
+    }
+  }
+
+  useEffect(() => {
+    fetchRecords();
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     fetchRecords();
@@ -87,7 +109,9 @@ export default function PatientDashboard() {
             label="Total Records"
             value={records.length}
             sub="+3 this week"
-            icon={<Activity className="w-6 h-6 text-blue-500 dark:text-blue-400" />}
+            icon={
+              <Activity className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+            }
           />
           <StatCard
             label="Last Update"
@@ -99,7 +123,9 @@ export default function PatientDashboard() {
                 : "—"
             }
             sub={records[0] ? "Updated recently" : ""}
-            icon={<Calendar className="w-6 h-6 text-green-500 dark:text-green-400" />}
+            icon={
+              <Calendar className="w-6 h-6 text-green-500 dark:text-green-400" />
+            }
           />
           <StatCard
             label="This Month"
@@ -110,7 +136,9 @@ export default function PatientDashboard() {
               ).length
             }
             sub="Records logged"
-            icon={<TrendingUp className="w-6 h-6 text-purple-500 dark:text-purple-400" />}
+            icon={
+              <TrendingUp className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+            }
           />
         </div>
 
@@ -168,6 +196,7 @@ export default function PatientDashboard() {
         {/* Add Record Modal */}
         {open && (
           <AddRecordForm
+            profile={profile}
             onClose={() => setOpen(false)}
             onCreated={(r) => {
               setRecords((prev) => [r, ...prev]);
@@ -195,9 +224,17 @@ function StatCard({ label, value, sub, icon }) {
           {icon}
         </div>
         <div className="text-right">
-          <div className="text-sm text-gray-500 dark:text-gray-400">{label}</div>
-          <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">{value}</div>
-          {sub && <div className="text-xs text-green-600 dark:text-green-400">{sub}</div>}
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {label}
+          </div>
+          <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+            {value}
+          </div>
+          {sub && (
+            <div className="text-xs text-green-600 dark:text-green-400">
+              {sub}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -218,7 +255,9 @@ function SimpleView({ records, onDelete }) {
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm">
               Start tracking your wellness journey by clicking{" "}
-              <span className="font-semibold text-blue-600 dark:text-blue-400">"Add Record"</span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
+                "Add Record"
+              </span>
             </p>
           </div>
         </div>
@@ -241,11 +280,11 @@ function SimpleView({ records, onDelete }) {
               </div>
               <div>
                 <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                  {new Date(r.date || r.createdAt).toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric' 
+                  {new Date(r.date || r.createdAt).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
                   })}
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -267,34 +306,34 @@ function SimpleView({ records, onDelete }) {
           {/* Metrics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {r.sleepHours && (
-              <MetricBadge 
+              <MetricBadge
                 icon={<Moon className="w-4 h-4" />}
-                label="Sleep" 
-                value={`${r.sleepHours}h`} 
+                label="Sleep"
+                value={`${r.sleepHours}h`}
                 color="blue"
               />
             )}
             {r.waterIntake && (
-              <MetricBadge 
+              <MetricBadge
                 icon={<Droplets className="w-4 h-4" />}
-                label="Water" 
-                value={`${r.waterIntake}L`} 
+                label="Water"
+                value={`${r.waterIntake}L`}
                 color="cyan"
               />
             )}
             {r.mood && (
-              <MetricBadge 
+              <MetricBadge
                 icon={<Smile className="w-4 h-4" />}
-                label="Mood" 
-                value={`${r.mood}/10`} 
+                label="Mood"
+                value={`${r.mood}/10`}
                 color="yellow"
               />
             )}
             {r.bmi && (
-              <MetricBadge 
+              <MetricBadge
                 icon={<Activity className="w-4 h-4" />}
-                label="BMI" 
-                value={r.bmi} 
+                label="BMI"
+                value={r.bmi}
                 color="purple"
               />
             )}
@@ -319,8 +358,10 @@ function MetricBadge({ icon, label, value, color }) {
   const colors = {
     blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
     cyan: "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300",
-    yellow: "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300",
-    purple: "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300",
+    yellow:
+      "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300",
+    purple:
+      "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300",
   };
 
   return (
