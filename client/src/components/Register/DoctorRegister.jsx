@@ -2,12 +2,25 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { ArrowLeft, ArrowRight, Check, User, Briefcase, MapPin } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  User,
+  Briefcase,
+  MapPin,
+  Upload,
+  Camera,
+} from "lucide-react";
 
 export default function DoctorRegister() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  // ✅ image upload states
+  const [profileImage, setProfileImage] = useState(null);
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
 
   const [formData, setFormData] = useState({
     // Step 1: Personal Information
@@ -34,10 +47,28 @@ export default function DoctorRegister() {
   });
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  // ✅ handle image upload + preview + validation
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    setProfileImage(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => setProfileImagePreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const validateStep = () => {
@@ -78,44 +109,51 @@ export default function DoctorRegister() {
   };
 
   const handleNext = () => {
-    if (validateStep()) {
-      setCurrentStep((prev) => Math.min(prev + 1, 3));
-    }
+    if (validateStep()) setCurrentStep((prev) => Math.min(prev + 1, 3));
   };
 
-  const handlePrev = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
+  const handlePrev = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateStep()) return;
 
     setLoading(true);
     try {
-      const payload = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        role: "doctor",
-        // Additional doctor fields
-        title: formData.title,
-        gender: formData.gender,
-        specialization: formData.specialization,
-        degree: formData.degree,
-        registrationId: formData.registrationId,
-        university: formData.university,
-        mobile: formData.mobile,
-        address: formData.address,
-        location: formData.location,
-        designation: formData.designation,
-        lastWorkPlace: formData.lastWorkPlace,
-      };
+      // ✅ multipart/form-data (same as patient)
+      const fd = new FormData();
 
-      await axios.post("http://localhost:5000/api/users/register", payload);
-      
+      // required base fields
+      fd.append("firstName", formData.firstName);
+      fd.append("lastName", formData.lastName);
+      fd.append("email", formData.email);
+      fd.append("password", formData.password);
+      fd.append("role", "doctor");
+
+      // personal
+      fd.append("title", formData.title);
+      fd.append("gender", formData.gender);
+
+      // professional
+      fd.append("specialization", formData.specialization);
+      fd.append("degree", formData.degree);
+      fd.append("registrationId", formData.registrationId);
+      fd.append("university", formData.university);
+
+      // contact/location
+      fd.append("mobile", formData.mobile);
+      fd.append("address", formData.address);
+      fd.append("location", formData.location);
+      fd.append("designation", formData.designation);
+      fd.append("lastWorkPlace", formData.lastWorkPlace);
+
+      // ✅ image
+      if (profileImage) fd.append("profileImage", profileImage);
+
+      await axios.post("http://localhost:5000/api/users/register", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       toast.success("Registration successful! Waiting for admin approval...");
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
@@ -144,18 +182,17 @@ export default function DoctorRegister() {
               <ArrowLeft className="w-5 h-5" />
               Back
             </button>
-            <div className="text-sm">
-              Step {currentStep} of 3
-            </div>
+            <div className="text-sm">Step {currentStep} of 3</div>
           </div>
           <h1 className="text-3xl font-bold">Doctor Registration</h1>
-          <p className="text-white/90 mt-1">Join our network of healthcare professionals</p>
+          <p className="text-white/90 mt-1">
+            Join our network of healthcare professionals
+          </p>
         </div>
 
         {/* Progress Bar */}
         <div className="px-6 py-8 border-b">
           <div className="flex items-center justify-between relative">
-            {/* Progress Line */}
             <div className="absolute top-5 left-0 right-0 h-1 bg-gray-200 -z-10">
               <div
                 className="h-full bg-red-500 transition-all duration-300"
@@ -163,7 +200,6 @@ export default function DoctorRegister() {
               />
             </div>
 
-            {/* Step Indicators */}
             {steps.map((step) => {
               const StepIcon = step.icon;
               const isActive = currentStep === step.number;
@@ -197,10 +233,44 @@ export default function DoctorRegister() {
 
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="p-8">
-          {/* Step 1: Personal Information */}
+          {/* Step 1 */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Personal Information</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Personal Information</h2>
+
+              {/* ✅ Profile Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Profile Image (optional)
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-gray-300">
+                    {profileImagePreview ? (
+                      <img
+                        src={profileImagePreview}
+                        alt="Doctor profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Camera className="w-10 h-10 text-gray-400" />
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition border border-gray-300">
+                      <Upload className="w-5 h-5" />
+                      <span>Upload Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">JPG/PNG (Max 5MB)</p>
+                  </div>
+                </div>
+              </div>
 
               {/* Title */}
               <div>
@@ -218,10 +288,12 @@ export default function DoctorRegister() {
                   <option value="Mr.">Mr.</option>
                   <option value="Mrs.">Mrs.</option>
                   <option value="Miss">Miss</option>
+                  <option value="Ms.">Ms.</option>
+                  <option value="Dr.">Dr.</option>
                 </select>
               </div>
 
-              {/* Name Row */}
+              {/* Name */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -288,7 +360,7 @@ export default function DoctorRegister() {
                 />
               </div>
 
-              {/* Password Row */}
+              {/* Password */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -322,12 +394,11 @@ export default function DoctorRegister() {
             </div>
           )}
 
-          {/* Step 2: Professional Details */}
+          {/* Step 2 */}
           {currentStep === 2 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Professional Details</h2>
 
-              {/* Specialization */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Specialization <span className="text-red-500">*</span>
@@ -338,12 +409,11 @@ export default function DoctorRegister() {
                   value={formData.specialization}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="e.g., Cardiology, Orthopedics, Pediatrics"
+                  placeholder="e.g., Cardiology, Orthopedics"
                   required
                 />
               </div>
 
-              {/* Degree */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Medical Degree <span className="text-red-500">*</span>
@@ -354,15 +424,14 @@ export default function DoctorRegister() {
                   value={formData.degree}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="e.g., MBBS, MD, MS"
+                  placeholder="e.g., MBBS, MD"
                   required
                 />
               </div>
 
-              {/* Registration ID */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Medical Registration / License ID <span className="text-red-500">*</span>
+                  Registration / License ID <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -370,15 +439,14 @@ export default function DoctorRegister() {
                   value={formData.registrationId}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="e.g., MCI-12345"
+                  placeholder="e.g., SLMC-12345"
                   required
                 />
               </div>
 
-              {/* University */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  University / Medical School <span className="text-red-500">*</span>
+                  University <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -386,19 +454,18 @@ export default function DoctorRegister() {
                   value={formData.university}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="e.g., Harvard Medical School"
+                  placeholder="e.g., University of Colombo"
                   required
                 />
               </div>
             </div>
           )}
 
-          {/* Step 3: Contact & Location */}
+          {/* Step 3 */}
           {currentStep === 3 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Contact & Location</h2>
 
-              {/* Mobile */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mobile Number <span className="text-red-500">*</span>
@@ -409,12 +476,11 @@ export default function DoctorRegister() {
                   value={formData.mobile}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="07X XXX XXXX"
                   required
                 />
               </div>
 
-              {/* Address */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Address <span className="text-red-500">*</span>
@@ -425,12 +491,11 @@ export default function DoctorRegister() {
                   onChange={handleChange}
                   rows="3"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="Street address, City, State, ZIP"
+                  placeholder="Street, City, District"
                   required
                 />
               </div>
 
-              {/* Location */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Hospital / Clinic Location <span className="text-red-500">*</span>
@@ -441,12 +506,11 @@ export default function DoctorRegister() {
                   value={formData.location}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="e.g., City General Hospital, New York"
+                  placeholder="e.g., City Hospital"
                   required
                 />
               </div>
 
-              {/* Designation */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Current Designation
@@ -457,11 +521,10 @@ export default function DoctorRegister() {
                   value={formData.designation}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="e.g., Senior Consultant"
+                  placeholder="e.g., Consultant"
                 />
               </div>
 
-              {/* Last Work Place */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Last Work Place
@@ -472,13 +535,13 @@ export default function DoctorRegister() {
                   value={formData.lastWorkPlace}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  placeholder="e.g., Apollo Hospital"
+                  placeholder="e.g., Asiri Hospital"
                 />
               </div>
             </div>
           )}
 
-          {/* Navigation Buttons */}
+          {/* Buttons */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t">
             {currentStep > 1 ? (
               <button
@@ -514,7 +577,7 @@ export default function DoctorRegister() {
             )}
           </div>
 
-          {/* Login Link */}
+          {/* Login */}
           <div className="text-center mt-6">
             <p className="text-gray-600">
               Already have an account?{" "}

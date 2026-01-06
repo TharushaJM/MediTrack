@@ -1,7 +1,20 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Lock, Upload, Camera, Heart, ArrowRight, AlertCircle, Phone, MapPin, Calendar } from "lucide-react";
+import {
+  User,
+  Mail,
+  Lock,
+  Upload,
+  Camera,
+  Heart,
+  ArrowRight,
+  AlertCircle,
+  Phone,
+  MapPin,
+  Calendar,
+  ArrowLeft,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function PatientRegister() {
@@ -36,18 +49,15 @@ export default function PatientRegister() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith("image/")) {
         toast.error("Please upload an image file");
         return;
       }
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size should be less than 5MB");
         return;
       }
       setProfileImage(file);
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileImagePreview(reader.result);
@@ -61,8 +71,12 @@ export default function PatientRegister() {
     setLoading(true);
     setError("");
 
-    // Validation
-    if (!formData.title || !formData.firstName || !formData.lastName || !formData.gender) {
+    if (
+      !formData.title ||
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.gender
+    ) {
       setError("Please fill all required personal information fields");
       toast.error("Please fill all required fields");
       setLoading(false);
@@ -91,7 +105,6 @@ export default function PatientRegister() {
     }
 
     try {
-      // Create FormData for file upload
       const formDataToSend = new FormData();
       formDataToSend.append("firstName", formData.firstName);
       formDataToSend.append("lastName", formData.lastName);
@@ -106,7 +119,6 @@ export default function PatientRegister() {
       formDataToSend.append("address", formData.address);
       formDataToSend.append("injuryCondition", formData.injuryCondition);
 
-      // Add profile image if uploaded
       if (profileImage) {
         formDataToSend.append("profileImage", profileImage);
       }
@@ -121,7 +133,6 @@ export default function PatientRegister() {
         }
       );
 
-      // Patient registration - auto login
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -141,20 +152,36 @@ export default function PatientRegister() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-6">
       <div className="max-w-4xl w-full">
-        {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-8 text-white text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4 backdrop-blur-sm">
-              <Heart className="w-8 h-8" />
+          {/* ✅ HEADER with Back Button */}
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-8 text-white">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                type="button"
+                onClick={() => navigate("/choose-role")}
+                className="flex items-center gap-2 text-white/90 hover:text-white transition"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Back
+              </button>
+
+              <div className="text-sm text-white/90">Patient</div>
             </div>
-            <h1 className="text-3xl font-bold">Patient Registration</h1>
-            <p className="text-green-100 mt-2">Join MediTrack to manage your health</p>
+
+            {/* Center Content */}
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4 backdrop-blur-sm">
+                <Heart className="w-8 h-8" />
+              </div>
+              <h1 className="text-3xl font-bold">Patient Registration</h1>
+              <p className="text-green-100 mt-2">
+                Join MediTrack to manage your health
+              </p>
+            </div>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-8">
-            {/* Error Alert */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 mb-6">
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -171,7 +198,6 @@ export default function PatientRegister() {
                   Profile Image
                 </label>
                 <div className="flex items-center gap-4">
-                  {/* Preview */}
                   <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-gray-300">
                     {profileImagePreview ? (
                       <img
@@ -184,7 +210,6 @@ export default function PatientRegister() {
                     )}
                   </div>
 
-                  {/* Upload Button */}
                   <div className="flex-1">
                     <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition border border-gray-300">
                       <Upload className="w-5 h-5" />
@@ -223,7 +248,7 @@ export default function PatientRegister() {
                 </select>
               </div>
 
-              {/* First Name and Last Name */}
+              {/* First & Last name */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -255,7 +280,7 @@ export default function PatientRegister() {
                 </div>
               </div>
 
-              {/* Gender and Injury/Condition */}
+              {/* Gender & Condition */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -289,7 +314,7 @@ export default function PatientRegister() {
                 </div>
               </div>
 
-              {/* Phone and Email */}
+              {/* Phone & Email */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -326,7 +351,7 @@ export default function PatientRegister() {
                 </div>
               </div>
 
-              {/* Date of Birth and City */}
+              {/* DOB & City */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -339,7 +364,6 @@ export default function PatientRegister() {
                       name="dateOfBirth"
                       value={formData.dateOfBirth}
                       onChange={handleChange}
-                      placeholder="dd/mm/yyyy"
                       className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                   </div>
@@ -377,7 +401,7 @@ export default function PatientRegister() {
                 />
               </div>
 
-              {/* Password and Confirm Password */}
+              {/* Passwords */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -412,7 +436,7 @@ export default function PatientRegister() {
                 </div>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit */}
               <div className="pt-4">
                 <button
                   type="submit"
@@ -433,7 +457,7 @@ export default function PatientRegister() {
                 </button>
               </div>
 
-              {/* Login Link */}
+              {/* Login link */}
               <div className="text-center pt-2">
                 <p className="text-gray-600">
                   Already have an account?{" "}
@@ -450,9 +474,9 @@ export default function PatientRegister() {
           </form>
         </div>
 
-        {/* Footer */}
         <p className="text-center text-sm text-gray-500 mt-6">
-          Your health data is secure with <span className="font-semibold text-gray-700">MediTrack</span>
+          Your health data is secure with{" "}
+          <span className="font-semibold text-gray-700">MediTrack</span>
         </p>
       </div>
     </div>
