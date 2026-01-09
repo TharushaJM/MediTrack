@@ -79,14 +79,26 @@ export default function HealthAssistant() {
         line.toLowerCase().includes("ask your doctor")
       ) {
         currentSection = "questions";
-      } else if (line.startsWith("*") || line.startsWith("-") || line.startsWith("•")) {
-        const cleaned = line.replace(/^[\*\-•]+/, "").trim().replace(/\*\*/g, "");
+      } else if (
+        line.startsWith("*") ||
+        line.startsWith("-") ||
+        line.startsWith("•")
+      ) {
+        const cleaned = line
+          .replace(/^[\*\-•]+/, "")
+          .trim()
+          .replace(/\*\*/g, "");
         if (cleaned.length > 5) {
           if (currentSection === "numbers") result.numbers.push(cleaned);
           else if (currentSection === "actions") result.actions.push(cleaned);
-          else if (currentSection === "questions") result.questions.push(cleaned);
+          else if (currentSection === "questions")
+            result.questions.push(cleaned);
         }
-      } else if (!line.includes("**") && currentSection === "about" && line.length > 10) {
+      } else if (
+        !line.includes("**") &&
+        currentSection === "about" &&
+        line.length > 10
+      ) {
         if (!result.about) result.about = line.replace(/\*\*/g, "");
       }
     });
@@ -94,11 +106,18 @@ export default function HealthAssistant() {
     // fallback
     if (!result.about && !result.numbers.length && !result.actions.length) {
       const paragraphs = text.split("\n\n");
-      result.about = paragraphs[0]?.substring(0, 200) || "Medical report analysis";
+      result.about =
+        paragraphs[0]?.substring(0, 200) || "Medical report analysis";
 
       lines.forEach((line) => {
-        if ((line.startsWith("*") || line.startsWith("-")) && line.length > 10) {
-          const cleaned = line.replace(/^[\*\-]+/, "").trim().replace(/\*\*/g, "");
+        if (
+          (line.startsWith("*") || line.startsWith("-")) &&
+          line.length > 10
+        ) {
+          const cleaned = line
+            .replace(/^[\*\-]+/, "")
+            .trim()
+            .replace(/\*\*/g, "");
           if (cleaned.match(/\d+/)) result.numbers.push(cleaned);
           else result.actions.push(cleaned);
         }
@@ -146,7 +165,8 @@ export default function HealthAssistant() {
       // if model returns objects, convert to a readable line for your current UI
       const metric = n.metric || n.label || "Value";
       const value = n.value || "—";
-      const target = n.target && n.target !== "—" ? ` (Target: ${n.target})` : "";
+      const target =
+        n.target && n.target !== "—" ? ` (Target: ${n.target})` : "";
       const note = n.note ? ` — ${n.note}` : "";
       return `${metric}: ${value}${target}${note}`.trim();
     });
@@ -162,7 +182,10 @@ export default function HealthAssistant() {
   const tryParseJsonSummary = (text) => {
     if (!text) return null;
 
-    const cleaned = text.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
+    const cleaned = text
+      .replace(/```json\s*/gi, "")
+      .replace(/```/g, "")
+      .trim();
 
     // Only attempt JSON parse if it looks like JSON
     if (!cleaned.startsWith("{")) return null;
@@ -253,7 +276,10 @@ export default function HealthAssistant() {
 
       setMessages((prev) => [...prev, { sender: "ai", text: data.reply }]);
     } catch {
-      setMessages((prev) => [...prev, { sender: "ai", text: "AI unavailable. Please try later." }]);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "ai", text: "AI unavailable. Please try later." },
+      ]);
     }
   };
 
@@ -273,7 +299,8 @@ export default function HealthAssistant() {
         Select a report to see insights
       </h2>
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-        Choose a report above and you’ll get a quick explanation, key numbers, next steps, and questions to ask your doctor.
+        Choose a report above and you’ll get a quick explanation, key numbers,
+        next steps, and questions to ask your doctor.
       </p>
 
       <div className="mt-4 flex flex-wrap gap-3">
@@ -285,7 +312,8 @@ export default function HealthAssistant() {
         </button>
 
         <div className="text-xs text-gray-500 dark:text-gray-400 self-center">
-          Tip: If a PDF is scanned and text can’t be read, try uploading a screenshot image.
+          Tip: If a PDF is scanned and text can’t be read, try uploading a
+          screenshot image.
         </div>
       </div>
     </div>
@@ -299,7 +327,9 @@ export default function HealthAssistant() {
           <div className="flex items-center gap-3">
             <Brain className="text-blue-600 dark:text-blue-400 w-6 h-6" />
             <div>
-              <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">AI Health Assistant</h1>
+              <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+                AI Health Assistant
+              </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Select a report to get an instant AI summary and chat insights
               </p>
@@ -310,13 +340,18 @@ export default function HealthAssistant() {
         {/* Report Selector */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
           <h2 className="font-semibold text-lg mb-2 text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <FileText className="text-blue-600 dark:text-blue-400" /> Choose Report
+            <FileText className="text-blue-600 dark:text-blue-400" /> Choose
+            Report
           </h2>
 
           <select
             value={selectedReportId} // ✅ controlled
             onChange={(e) => handleSelectReport(e.target.value)}
-            className="w-full border dark:border-gray-700 rounded-lg p-2 focus:ring-2 focus:ring-blue-400 outline-none bg-gray-50"
+            className="w-full rounded-lg p-2 outline-none
+                border border-gray-200 dark:border-gray-700
+                bg-white dark:bg-gray-800
+                text-gray-900 dark:text-gray-100
+                focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
           >
             <option value="">-- Select a report --</option>
             {reports.map((r) => (
@@ -338,13 +373,17 @@ export default function HealthAssistant() {
                 <Brain className="w-6 h-6" />
                 Your Report Summary
               </h2>
-              <p className="text-blue-100 text-sm mt-1">AI-powered insights in simple language</p>
+              <p className="text-blue-100 text-sm mt-1">
+                AI-powered insights in simple language
+              </p>
             </div>
 
             {loading ? (
               <div className="p-8 flex flex-col items-center justify-center gap-3">
                 <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
-                <p className="text-gray-500 dark:text-gray-400">Reading your report...</p>
+                <p className="text-gray-500 dark:text-gray-400">
+                  Reading your report...
+                </p>
               </div>
             ) : (
               <div className="p-6 space-y-5">
@@ -357,7 +396,9 @@ export default function HealthAssistant() {
                         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
                           What This Is About
                         </h3>
-                        <p className="text-gray-700 dark:text-gray-200 leading-relaxed">{parsedSummary.about}</p>
+                        <p className="text-gray-700 dark:text-gray-200 leading-relaxed">
+                          {parsedSummary.about}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -369,10 +410,15 @@ export default function HealthAssistant() {
                     <div className="flex items-start gap-3">
                       <Activity className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Your Numbers</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                          Your Numbers
+                        </h3>
                         <div className="space-y-2">
                           {parsedSummary.numbers.map((num, idx) => (
-                            <div key={idx} className="flex items-start gap-2 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3">
+                            <div
+                              key={idx}
+                              className="flex items-start gap-2 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3"
+                            >
                               <span className="text-lg">📊</span>
                               <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">
                                 {num}
@@ -391,12 +437,19 @@ export default function HealthAssistant() {
                     <div className="flex items-start gap-3">
                       <ListChecks className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">What You Should Do</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                          What You Should Do
+                        </h3>
                         <div className="space-y-2">
                           {parsedSummary.actions.map((action, idx) => (
-                            <div key={idx} className="flex items-start gap-3 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3">
+                            <div
+                              key={idx}
+                              className="flex items-start gap-3 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3"
+                            >
                               <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">{action}</span>
+                              <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">
+                                {action}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -411,12 +464,19 @@ export default function HealthAssistant() {
                     <div className="flex items-start gap-3">
                       <HelpCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Questions for Your Doctor</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                          Questions for Your Doctor
+                        </h3>
                         <div className="space-y-2">
                           {parsedSummary.questions.map((q, idx) => (
-                            <div key={idx} className="flex items-start gap-2 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3">
+                            <div
+                              key={idx}
+                              className="flex items-start gap-2 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3"
+                            >
                               <span className="text-lg">💬</span>
-                              <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">{q}</span>
+                              <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">
+                                {q}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -426,11 +486,16 @@ export default function HealthAssistant() {
                 )}
 
                 {/* Raw fallback */}
-                {!parsedSummary.about && !parsedSummary.numbers.length && !parsedSummary.actions.length && summary && (
-                  <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                    <p className="text-gray-700 dark:text-gray-200 text-sm leading-relaxed whitespace-pre-line">{summary}</p>
-                  </div>
-                )}
+                {!parsedSummary.about &&
+                  !parsedSummary.numbers.length &&
+                  !parsedSummary.actions.length &&
+                  summary && (
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                      <p className="text-gray-700 dark:text-gray-200 text-sm leading-relaxed whitespace-pre-line">
+                        {summary}
+                      </p>
+                    </div>
+                  )}
 
                 {/* View Original */}
                 <div className="pt-4 border-t dark:border-gray-700 flex justify-between items-center">
@@ -443,7 +508,9 @@ export default function HealthAssistant() {
                     <FileText className="w-4 h-4" />
                     View Full Report
                   </a>
-                  <span className="text-xs text-gray-400">AI-generated • Not a replacement for medical advice</span>
+                  <span className="text-xs text-gray-400">
+                    AI-generated • Not a replacement for medical advice
+                  </span>
                 </div>
               </div>
             )}
@@ -455,16 +522,25 @@ export default function HealthAssistant() {
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 h-[500px] flex flex-col">
             <div className="flex items-center gap-2 mb-4">
               <MessageSquare className="text-blue-600 dark:text-blue-400" />
-              <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100">Chat with AI</h2>
+              <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100">
+                Chat with AI
+              </h2>
             </div>
 
             <div className="flex-1 overflow-y-auto mb-4 space-y-3">
               {messages.length === 0 && (
-                <p className="text-gray-400 text-sm text-center mt-20">Ask about your selected report...</p>
+                <p className="text-gray-400 text-sm text-center mt-20">
+                  Ask about your selected report...
+                </p>
               )}
 
               {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  key={i}
+                  className={`flex ${
+                    msg.sender === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
                   <div
                     className={`max-w-[75%] p-3 rounded-xl text-sm ${
                       msg.sender === "user"
@@ -487,7 +563,10 @@ export default function HealthAssistant() {
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 className="flex-1 border dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
               />
-              <button onClick={handleSend} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition">
+              <button
+                onClick={handleSend}
+                className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"
+              >
                 <Send className="w-5 h-5" />
               </button>
             </div>
