@@ -55,7 +55,7 @@ export default function ReminderCard({ reminder, onDelete, onToggleTaken }) {
             <Pill className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h3 className="font-semibold">{reminder.name}</h3>
+            <h3 className="font-semibold dark:text-gray-400">{reminder.name}</h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm">{reminder.dosage || "—"}</p>
           </div>
         </div>
