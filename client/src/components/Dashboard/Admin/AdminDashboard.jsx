@@ -17,6 +17,9 @@ import {
   X,
   Moon,
   Sun,
+  Mail,
+  MessageSquare,
+  Trash2,
 } from "lucide-react";
 import {
   BarChart,
@@ -39,10 +42,12 @@ const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444"];
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
-  const [activeTab, setActiveTab] = useState("pending"); // "pending", "doctors", "patients"
+  const [activeTab, setActiveTab] = useState("pending"); // "pending", "doctors", "patients", "messages"
   const [pendingDoctors, setPendingDoctors] = useState([]);
   const [allDoctors, setAllDoctors] = useState([]);
   const [allPatients, setAllPatients] = useState([]);
+  const [contactMessages, setContactMessages] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalPatients: 0,
@@ -142,6 +147,20 @@ export default function AdminDashboard() {
 
         setUserGrowthData(growthData);
 
+        // Fetch contact messages
+        const messagesRes = await axios.get(
+          "http://localhost:5000/api/contact",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setContactMessages(messagesRes.data || []);
+        
+        // Fetch unread count
+        const unreadRes = await axios.get(
+          "http://localhost:5000/api/contact/unread-count",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setUnreadCount(unreadRes.data?.count || 0);
+
       } catch (err) {
         console.error(err);
         setError("Failed to load dashboard data.");
@@ -207,6 +226,49 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error(err);
       alert("Failed to reject doctor.");
+    }
+  };
+
+  // Mark message as read
+  const handleMarkAsRead = async (messageId) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:5000/api/contact/${messageId}`,
+        { status: "read" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setContactMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === messageId ? { ...msg, status: "read" } : msg
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update message status.");
+    }
+  };
+
+  // Delete message
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm("Are you sure you want to delete this message?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:5000/api/contact/${messageId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const deletedMsg = contactMessages.find((msg) => msg._id === messageId);
+      setContactMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+      if (deletedMsg?.status === "unread") {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete message.");
     }
   };
 
@@ -440,14 +502,101 @@ export default function AdminDashboard() {
             >
               All Patients ({allPatients.length})
             </button>
+            <button
+              onClick={() => setActiveTab("messages")}
+              className={`px-4 py-2 font-medium transition-all flex items-center gap-2 ${
+                activeTab === "messages"
+                  ? "text-purple-600 border-b-2 border-purple-600"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Messages
+              {unreadCount > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
           </div>
 
           {loading ? (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              Loading users...
+              Loading data...
             </div>
           ) : error ? (
             <div className="text-center py-12 text-red-500">{error}</div>
+          ) : activeTab === "messages" ? (
+            /* Messages Tab Content */
+            contactMessages.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                No contact messages yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {contactMessages.map((msg) => (
+                  <div
+                    key={msg._id}
+                    className={`bg-white dark:bg-gray-800 rounded-xl p-5 border transition hover:shadow-md ${
+                      msg.status === "unread"
+                        ? "border-purple-300 dark:border-purple-600 bg-purple-50 dark:bg-purple-900/20"
+                        : "border-gray-200 dark:border-gray-700"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center font-semibold">
+                          {msg.firstName?.charAt(0)}{msg.lastName?.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-800 dark:text-white">
+                            {msg.firstName} {msg.lastName}
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{msg.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {msg.status === "unread" && (
+                          <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs px-2 py-1 rounded-full font-medium">
+                            New
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                          {new Date(msg.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                      {msg.message}
+                    </p>
+                    <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      {msg.status === "unread" && (
+                        <button
+                          onClick={() => handleMarkAsRead(msg._id)}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition"
+                        >
+                          <Check className="w-4 h-4" />
+                          Mark as Read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteMessage(msg._id)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           ) : filteredData.length === 0 ? (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               {searchTerm

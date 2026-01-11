@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import axios from "axios";
 import {
   Sparkles,
   FileText,
@@ -14,8 +16,39 @@ import {
 
 import heroImg from "./hero-illustration.png";
 import ctaImg from "./cta-illustration.png";
+import contactIMG from "./contactIMG.png";
+
+
+const API = "http://localhost:5000";
 
 export default function Landing() {
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    message: "",
+  });
+  const [contactStatus, setContactStatus] = useState({ loading: false, success: "", error: "" });
+
+  const handleContactChange = (e) => {
+    setContactForm({ ...contactForm, [e.target.name]: e.target.value });
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setContactStatus({ loading: true, success: "", error: "" });
+
+    try {
+      await axios.post(`${API}/api/contact`, contactForm);
+      setContactStatus({ loading: false, success: "Thank you! Your message has been sent.", error: "" });
+      setContactForm({ firstName: "", lastName: "", email: "", message: "" });
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Failed to send message. Please try again.";
+      setContactStatus({ loading: false, success: "", error: msg });
+    }
+  };
+
   const patientFeatures = [
     {
       icon: <Activity className="w-6 h-6" />,
@@ -120,9 +153,7 @@ export default function Landing() {
               </h1>
 
               <p className="text-gray-600 text-lg max-w-xl">
-                MediTrack helps patients track wellness and keep reports in one
-                place — while doctors manage appointments, notifications, and
-                patient chats smoothly.
+                MediTrack helps patients keep track of their health journey while giving doctors the tools to manage appointments and stay connected with their patients.
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -144,13 +175,13 @@ export default function Landing() {
 
               <div className="flex flex-wrap gap-6 text-sm text-gray-500 pt-2">
                 <div className="flex items-center gap-2">
-                  🩺 <span>Appointments</span>
+                   <span>Appointments</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  📄 <span>Reports Vault</span>
+                   <span>Reports Vault</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  💬 <span>Chat + Notifications</span>
+                   <span>Chat </span>
                 </div>
               </div>
             </motion.div>
@@ -390,45 +421,33 @@ export default function Landing() {
                 CONTACT US
               </div>
 
-              <h2 className="mt-5 text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] text-slate-900">
-                Let&apos;s Start a{" "}
-                <span className="relative inline-block">
-                  conversation
-                  <span className="absolute -z-10 left-0 right-0 bottom-2 h-4 rounded-md bg-gradient-to-r from-blue-400/70 to-purple-400/70" />
-                </span>
-              </h2>
+             
 
-              <p className="mt-5 text-lg text-slate-600 leading-relaxed max-w-xl">
+              <p className="mt-5 text-lg text-slate-600 leading-relaxed font-extrabold max-w-xl">
                 Have questions about MediTrack? We’re here to help. Reach out
                 and we’ll get back to you within 24 hours.
               </p>
 
-              <div className="mt-10 space-y-5">
-                <ContactInfo
-                  label="Email"
-                  value="hello@meditrack.com"
-                  icon={<MailIcon />}
-                />
-                <ContactInfo
-                  label="Phone"
-                  value="+1 (555) 123-4567"
-                  icon={<PhoneIcon />}
-                />
-                <ContactInfo
-                  label="Address"
-                  value="San Francisco, CA"
-                  icon={<PinIcon />}
+              <div className="relative">
+                <img
+                  src={contactIMG}
+                  alt="contactIMG"
+                  className="w-full rounded-2xl"
                 />
               </div>
             </div>
 
-            <div className="rounded-3xl bg-white border border-slate-200 shadow-sm p-7 md:p-8">
+            <form onSubmit={handleContactSubmit} className="rounded-3xl bg-white border border-slate-200 shadow-sm p-7 md:p-8">
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
                   <label className="text-sm font-semibold text-slate-800">
                     First Name
                   </label>
                   <input
+                    name="firstName"
+                    value={contactForm.firstName}
+                    onChange={handleContactChange}
+                    required
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/30"
                     placeholder="John"
                   />
@@ -439,6 +458,10 @@ export default function Landing() {
                     Last Name
                   </label>
                   <input
+                    name="lastName"
+                    value={contactForm.lastName}
+                    onChange={handleContactChange}
+                    required
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/30"
                     placeholder="Doe"
                   />
@@ -450,8 +473,13 @@ export default function Landing() {
                   Email
                 </label>
                 <input
+                  name="email"
+                  type="email"
+                  value={contactForm.email}
+                  onChange={handleContactChange}
+                  required
                   className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/30"
-                  placeholder="john@example.com"
+                  placeholder=" @example.com"
                 />
               </div>
 
@@ -460,6 +488,10 @@ export default function Landing() {
                   Message
                 </label>
                 <textarea
+                  name="message"
+                  value={contactForm.message}
+                  onChange={handleContactChange}
+                  required
                   className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/30"
                   rows={6}
                   placeholder="How can we help you?"
@@ -467,19 +499,27 @@ export default function Landing() {
               </div>
 
               <button
-                type="button"
-                className="mt-7 w-full rounded-2xl py-4 font-extrabold text-white shadow-sm transition hover:opacity-95 bg-gradient-to-r from-blue-600 to-purple-600"
+                type="submit"
+                disabled={contactStatus.loading}
+                className="mt-7 w-full rounded-2xl py-4 font-extrabold text-white shadow-sm transition hover:opacity-95 bg-gradient-to-r from-blue-600 to-purple-600 disabled:opacity-50"
               >
                 <span className="inline-flex items-center justify-center gap-2">
-                  Send Message
-                  <SendIcon />
+                  {contactStatus.loading ? "Sending..." : "Send Message"}
+                  {!contactStatus.loading && <SendIcon />}
                 </span>
               </button>
 
-              <p className="mt-3 text-xs text-slate-500">
-                * UI only (no data is sent).
-              </p>
-            </div>
+              {contactStatus.success && (
+                <p className="mt-3 text-sm text-green-600 font-medium">
+                  {contactStatus.success}
+                </p>
+              )}
+              {contactStatus.error && (
+                <p className="mt-3 text-sm text-red-600 font-medium">
+                  {contactStatus.error}
+                </p>
+              )}
+            </form>
           </div>
         </div>
       </section>
