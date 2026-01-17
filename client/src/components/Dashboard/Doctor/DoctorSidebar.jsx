@@ -11,7 +11,7 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
 
-export default function DoctorSidebar({ activeMenu, setActiveMenu, onOpenReports }) {
+export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
   const navigate = useNavigate();
   const { darkMode } = useTheme();
 
@@ -63,19 +63,13 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu, onOpenReports
             active={activeMenu === "appointments"}
             onClick={() => setActiveMenu("appointments")}
           />
-          <NavItem
-            icon={<MessageSquare size={20} />}
-            text="Chat"
-            active={activeMenu === "chat"}
-            onClick={() => setActiveMenu("chat")}
-          />
+          <NavItem to="/chat" icon={<MessageSquare size={20} />} text="Chat" />
 
           <NavItem
             icon={<FileText size={20} />}
             text="Reports"
             active={activeMenu === "reports"}
-            onClick={() => (onOpenReports ? onOpenReports() : setActiveMenu("reports"))}
-
+            onClick={() => setActiveMenu("reports")}
           />
           <NavItem
             icon={<UserCircle size={20} />}
@@ -83,7 +77,12 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu, onOpenReports
             active={activeMenu === "profile"}
             onClick={() => setActiveMenu("profile")}
           />
-        
+          <NavItem
+            icon={<Settings size={20} />}
+            text="Settings"
+            active={activeMenu === "settings"}
+            onClick={() => setActiveMenu("settings")}
+          />
         </nav>
       </div>
 

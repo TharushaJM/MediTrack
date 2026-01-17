@@ -34,22 +34,20 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors overflow-hidden">
+    <div className="flex h-screen bg-gray-950 transition-colors overflow-hidden">
       {/* Sidebar - Fixed and Scrollable */}
-      <aside className="w-64 bg-[#007BCE] dark:bg-gray-900 text-white flex flex-col justify-between border-r dark:border-gray-800 shadow-lg fixed left-0 top-0 h-screen overflow-y-auto">
+      <aside className="w-64 bg-gray-900 text-white flex flex-col justify-between border-r border-gray-800 shadow-lg fixed left-0 top-0 h-screen overflow-y-auto">
         <div className="flex-1">
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-3 px-6 py-6 border-b border-blue-400/30 dark:border-gray-800 hover:bg-blue-600 dark:hover:bg-gray-800 transition-all sticky top-0 bg-[#007BCE] dark:bg-gray-900 z-10"
+            className="flex items-center justify-center px-6 py-8 border-b border-gray-800 hover:bg-gray-800 transition-all sticky top-0 bg-gray-900 z-10"
           >
-            <div className="bg-white text-[#007BCE] dark:bg-gray-800 dark:text-blue-400 w-9 h-9 flex items-center justify-center rounded-full font-bold shadow-md">
-              M
-            </div>
-            <h1 className="text-xl font-bold">
-              <span className="text-white">Medi</span>
-              <span className="text-white/90 dark:text-gray-300">Track</span>
-            </h1>
+            <img
+              src="/medical.png"
+              alt="MediTrack Icon"
+              className="h-10 w-auto object-contain scale-150 origin-center"
+            />
           </Link>
 
           {/* Nav Links */}
@@ -97,10 +95,10 @@ export default function DashboardLayout({ children }) {
         </div>
 
         {/* Logout Button - Sticky at bottom */}
-        <div className="border-t border-blue-400/30 dark:border-gray-800 sticky bottom-0 bg-[#007BCE] dark:bg-gray-900">
+        <div className="border-t border-gray-800 sticky bottom-0 bg-gray-900">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-6 py-4 text-sm text-white/90 hover:bg-blue-600 dark:hover:bg-gray-800 transition-all w-full group"
+            className="flex items-center gap-3 px-6 py-4 text-sm text-white/90 hover:bg-gray-800 transition-all w-full group"
           >
             <LogOut
               size={18}
@@ -129,8 +127,8 @@ function NavItem({ to, icon, text }) {
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
           isActive
-            ? "bg-white/10 dark:bg-gray-800 text-white shadow-md border-l-4 border-white"
-            : "text-white/80 hover:bg-white/5 dark:hover:bg-gray-800/50 hover:text-white hover:pl-5"
+            ? "bg-gray-800 text-white shadow-md border-l-4 border-white"
+            : "text-white/80 hover:bg-gray-800/50 hover:text-white hover:pl-5"
         }`
       }
     >

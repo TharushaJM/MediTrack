@@ -1,0 +1,19 @@
+[debug] [2026-01-11T21:50:37.714Z] ----------------------------------------------------------------------
+[debug] [2026-01-11T21:50:37.716Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Tharusha Gonawala\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2026-01-11T21:50:37.716Z] CLI Version:   15.2.1
+[debug] [2026-01-11T21:50:37.716Z] Platform:      win32
+[debug] [2026-01-11T21:50:37.717Z] Node Version:  v22.15.0
+[debug] [2026-01-11T21:50:37.717Z] Time:          Mon Jan 12 2026 03:20:37 GMT+0530 (India Standard Time)
+[debug] [2026-01-11T21:50:37.717Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  D:\GitProjects\MediTrack
+

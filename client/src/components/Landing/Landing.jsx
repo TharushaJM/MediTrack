@@ -91,10 +91,11 @@ export default function Landing() {
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 font-extrabold text-xl">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white flex items-center justify-center">
-              M
-            </div>
-            <span>MediTrack</span>
+            <img 
+              src="/medical.png" 
+              alt="MediTrack Logo" 
+              className="h-10 w-auto object-contain scale-150 origin-center"
+            />
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-600">
