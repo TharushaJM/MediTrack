@@ -25,22 +25,16 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
     <aside className="w-64 bg-[#007BCE] dark:bg-gray-900 text-white flex flex-col justify-between border-r dark:border-gray-800 shadow-lg fixed left-0 top-0 h-screen overflow-y-auto z-40">
       <div className="flex-1">
         {/* Logo */}
+        
         <Link
           to="/"
-          className="flex items-center gap-3 px-6 py-6 border-b border-blue-400/30 dark:border-gray-800 hover:bg-blue-600 dark:hover:bg-gray-800 transition-all sticky top-0 bg-[#007BCE] dark:bg-gray-900 z-10"
+          className="flex items-center justify-center px-6 py-8 border-b border-gray-800 hover:bg-gray-800 transition-all sticky top-0 bg-gray-900 z-10"
         >
-          <div className="bg-white text-[#007BCE] dark:bg-gray-800 dark:text-blue-400 w-9 h-9 flex items-center justify-center rounded-full font-bold shadow-md">
-            M
-          </div>
-          <div>
-            <h1 className="text-xl font-bold">
-              <span className="text-white">Medi</span>
-              <span className="text-white/90 dark:text-gray-300">Track</span>
-            </h1>
-            <p className="text-xs text-white/70 dark:text-gray-400">
-              Doctor Portal
-            </p>
-          </div>
+          <img
+            src="/medical.png"
+            alt="MediTrack Icon"
+            className="h-10 w-auto object-contain scale-150 origin-center"
+          />
         </Link>
 
         {/* Navigation Menu */}
@@ -63,7 +57,12 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
             active={activeMenu === "appointments"}
             onClick={() => setActiveMenu("appointments")}
           />
-          <NavItem to="/chat" icon={<MessageSquare size={20} />} text="Chat" />
+          <NavItem
+            icon={<MessageSquare size={20} />}
+            text="Chat"
+            active={activeMenu === "chat"}
+            onClick={() => setActiveMenu("chat")}
+          />
 
           <NavItem
             icon={<FileText size={20} />}

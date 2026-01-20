@@ -12,12 +12,12 @@ export default function RoleSelection() {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="bg-blue-600 w-12 h-12 flex items-center justify-center rounded-xl font-bold text-white shadow-lg">
-              M
-            </div>
-            <h1 className="text-3xl font-bold text-gray-800">
-              <span className="text-blue-600">Medi</span>Track
-            </h1>
+            <img 
+              src="/medical.png" 
+              alt="MediTrack Logo" 
+              className="w-40 h-40 object-contain"
+            />
+            
           </div>
           <p className="text-gray-600 text-lg">Choose how you want to register</p>
         </div>
@@ -45,14 +45,7 @@ export default function RoleSelection() {
                 Patient Registration
               </h2>
 
-              {/* Stats */}
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-3xl font-bold text-white">100K+</span>
-                <div className="flex items-center gap-1 text-white/90 text-sm">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>+40%</span>
-                </div>
-              </div>
+            
 
               {/* Description */}
               <p className="text-white/90 mb-6 text-sm leading-relaxed">
@@ -90,14 +83,7 @@ export default function RoleSelection() {
                 Doctor Registration
               </h2>
 
-              {/* Stats */}
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-3xl font-bold text-white">100+</span>
-                <div className="flex items-center gap-1 text-white/90 text-sm">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>+16%</span>
-                </div>
-              </div>
+             
 
               {/* Description */}
               <p className="text-white/90 mb-6 text-sm leading-relaxed">
