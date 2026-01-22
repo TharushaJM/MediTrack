@@ -13,6 +13,10 @@ import {
   XCircle,
   Loader2,
   RefreshCw,
+  Award,
+  Star,
+  Target,
+  Zap,
 } from "lucide-react";
 import {
   BarChart,
@@ -63,16 +67,51 @@ export default function DoctorDashboard() {
   const [reportPatientId, setReportPatientId] = useState(null);
   const [reportPatient, setReportPatient] = useState(null);
 
-  // Mock data for patient visits
-  const weeklyVisits = [
-    { day: "Mon", visits: 12 },
-    { day: "Tue", visits: 19 },
-    { day: "Wed", visits: 15 },
-    { day: "Thu", visits: 22 },
-    { day: "Fri", visits: 18 },
-    { day: "Sat", visits: 8 },
-    { day: "Sun", visits: 5 },
-  ];
+  // Calculate real weekly visits from appointments
+  const getWeeklyVisits = () => {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
+    
+    // Initialize counts for each day
+    const visitCounts = {
+      "Sun": 0,
+      "Mon": 0,
+      "Tue": 0,
+      "Wed": 0,
+      "Thu": 0,
+      "Fri": 0,
+      "Sat": 0
+    };
+
+    // Count appointments for this week
+    appointments.forEach(apt => {
+      if (!apt.date) return;
+      
+      const aptDate = new Date(apt.date);
+      const daysDiff = Math.floor((aptDate - startOfWeek) / (1000 * 60 * 60 * 24));
+      
+      // Only count appointments from this week
+      if (daysDiff >= 0 && daysDiff < 7) {
+        const dayName = days[aptDate.getDay()];
+        visitCounts[dayName]++;
+      }
+    });
+
+    // Return in Mon-Sun order for the chart
+    return [
+      { day: "Mon", visits: visitCounts["Mon"] },
+      { day: "Tue", visits: visitCounts["Tue"] },
+      { day: "Wed", visits: visitCounts["Wed"] },
+      { day: "Thu", visits: visitCounts["Thu"] },
+      { day: "Fri", visits: visitCounts["Fri"] },
+      { day: "Sat", visits: visitCounts["Sat"] },
+      { day: "Sun", visits: visitCounts["Sun"] },
+    ];
+  };
+
+  const weeklyVisits = getWeeklyVisits();
 
   // Fetch appointments function
   const fetchAppointments = async () => {
@@ -261,7 +300,14 @@ export default function DoctorDashboard() {
       {/* Main Content */}
       <div className="ml-64">
         {/* Top Bar - Using DoctorHeader Component */}
-        <DoctorHeader doctor={doctor} />
+        <DoctorHeader 
+          doctor={doctor}
+          onNavigateToPatients={() => setActiveMenu("patients")}
+          onSelectPatient={(patient) => {
+            setSelectedPatient(patient);
+            setActiveMenu("patients");
+          }}
+        />
 
         {/* Render Profile or Dashboard Content */}
         {activeMenu === "profile" ? (
@@ -404,70 +450,152 @@ export default function DoctorDashboard() {
             </div>
           </div>
         ) : (
-          <main className="p-8">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <SummaryCard
-                icon={<Users className="w-6 h-6" />}
-                title="Total Patients"
-                value={uniquePatients.toString()}
-                change={`${appointments.length} appointments`}
-                color="blue"
-                darkMode={darkMode}
-              />
-              <SummaryCard
-                icon={<Calendar className="w-6 h-6" />}
-                title="Today's Appointments"
-                value={todayAppointments.length.toString()}
-                change={`${completedToday} completed`}
-                color="green"
-                darkMode={darkMode}
-              />
-              <SummaryCard
-                icon={<FileText className="w-6 h-6" />}
-                title="Pending"
-                value={upcomingAppointments.length.toString()}
-                change="Awaiting confirmation"
-                color="orange"
-                darkMode={darkMode}
-              />
+          <main className="p-8 bg-gray-50 dark:bg-gray-950">
+            {/* Welcome Section */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Welcome back, Dr. {doctor?.lastName || ""}! 
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Here's your practice overview for today
+              </p>
+            </div>
+
+            {/* Health Metric Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+              {/* Today's Appointments Card */}
+              <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 
+                border-2 border-blue-200 dark:border-blue-900/30 rounded-2xl p-5 shadow-sm hover:shadow-lg 
+                transition-all duration-300 hover:-translate-y-1">
+                <div className="bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 p-3 rounded-xl w-fit mb-4">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Today's Schedule
+                </div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  {todayAppointments.length}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {completedToday > 0 
+                    ? `${completedToday} completed` 
+                    : "Appointments today"}
+                </div>
+                {todayAppointments.length > 0 && (
+                  <div className="mt-3">
+                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${(completedToday / todayAppointments.length) * 100}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-right font-medium">
+                      {Math.round((completedToday / todayAppointments.length) * 100)}% completed
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Total Patients Card */}
+              <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 
+                border-2 border-green-200 dark:border-green-900/30 rounded-2xl p-5 shadow-sm hover:shadow-lg 
+                transition-all duration-300 hover:-translate-y-1">
+                <div className="bg-green-500/10 dark:bg-green-500/20 text-green-600 dark:text-green-400 p-3 rounded-xl w-fit mb-4">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Total Patients
+                </div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  {uniquePatients}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {appointments.length} appointments total
+                </div>
+              </div>
+
+              {/* Pending Appointments Card */}
+              <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 
+                border-2 border-orange-200 dark:border-orange-900/30 rounded-2xl p-5 shadow-sm hover:shadow-lg 
+                transition-all duration-300 hover:-translate-y-1">
+                <div className="bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 p-3 rounded-xl w-fit mb-4">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Pending Requests
+                </div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  {upcomingAppointments.length}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {upcomingAppointments.length > 0 
+                    ? "Awaiting confirmation" 
+                    : "All caught up! 🎉"}
+                </div>
+              </div>
+
+              {/* Completion Rate Card */}
+              <div className="relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 
+                border-2 border-purple-200 dark:border-purple-900/30 rounded-2xl p-5 shadow-sm hover:shadow-lg 
+                transition-all duration-300 hover:-translate-y-1">
+                <div className="bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 p-3 rounded-xl w-fit mb-4">
+                  <Target className="w-6 h-6" />
+                </div>
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Completion Rate
+                </div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  {appointments.length > 0 
+                    ? `${Math.round((appointments.filter(a => a.status === "Completed").length / appointments.length) * 100)}%`
+                    : "0%"}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {appointments.filter(a => a.status === "Completed").length} completed
+                </div>
+              </div>
             </div>
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Upcoming Appointments - Takes 2 columns */}
-              <div
-                className={`lg:col-span-2 ${
-                  darkMode
-                    ? "bg-gray-900 border-gray-800"
-                    : "bg-white border-gray-200"
-                } border rounded-xl p-6 shadow-sm`}
-              >
+              <div className="lg:col-span-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 
+                rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
-                  <h3
-                    className={`text-lg font-semibold ${
-                      darkMode ? "text-white" : "text-gray-800"
-                    } flex items-center gap-2`}
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      Upcoming Appointments
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {upcomingAppointments.length} appointments pending
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchAppointments}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+                    title="Refresh"
                   >
-                    <Clock className="w-5 h-5 text-blue-500" />
-                    Upcoming Appointments
-                  </h3>
-                  
+                    <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  </button>
                 </div>
 
                 <div className="space-y-3">
                   {appointmentsLoading ? (
-                    <div className="flex justify-center items-center py-8">
+                    <div className="flex justify-center items-center py-12">
                       <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
                     </div>
                   ) : upcomingAppointments.length === 0 ? (
-                    <div
-                      className={`text-center py-8 ${
-                        darkMode ? "text-gray-400" : "text-gray-500"
-                      }`}
-                    >
-                      <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>No upcoming appointments</p>
+                    <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 
+                      border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-12 text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <Calendar className="w-8 h-8 text-white" />
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        No Upcoming Appointments
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        You're all caught up! New appointments will appear here.
+                      </p>
                     </div>
                   ) : (
                     upcomingAppointments
@@ -488,19 +616,10 @@ export default function DoctorDashboard() {
               </div>
 
               {/* Weekly Patient Visits Chart */}
-              <div
-                className={`${
-                  darkMode
-                    ? "bg-gray-900 border-gray-800"
-                    : "bg-white border-gray-200"
-                } border rounded-xl p-6 shadow-sm`}
-              >
-                <h3
-                  className={`text-lg font-semibold ${
-                    darkMode ? "text-white" : "text-gray-800"
-                  } mb-6 flex items-center gap-2`}
-                >
-                  <TrendingUp className="w-5 h-5 text-green-500" />
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 
+                rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
                   Weekly Visits
                 </h3>
                 <ResponsiveContainer width="100%" height={300}>
@@ -534,38 +653,42 @@ export default function DoctorDashboard() {
               </div>
             </div>
 
-            {/* Quick Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+            {/* Quick Stats Row - Redesigned */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mt-6">
               <QuickStat
-                icon={<Activity className="w-5 h-5 text-blue-500" />}
+                icon={<CheckCircle className="w-5 h-5" />}
                 label="Completed Today"
                 value={completedToday.toString()}
+                color="green"
                 darkMode={darkMode}
               />
               <QuickStat
-                icon={<UserCheck className="w-5 h-5 text-green-500" />}
+                icon={<UserCheck className="w-5 h-5" />}
                 label="Confirmed"
                 value={appointments
                   .filter((a) => a.status === "Confirmed")
                   .length.toString()}
+                color="blue"
                 darkMode={darkMode}
               />
               <QuickStat
-                icon={<Clock className="w-5 h-5 text-purple-500" />}
+                icon={<Clock className="w-5 h-5" />}
                 label="Next Appointment"
                 value={
                   upcomingAppointments.length > 0
                     ? upcomingAppointments[0]?.timeSlot || "N/A"
                     : "N/A"
                 }
+                color="purple"
                 darkMode={darkMode}
               />
               <QuickStat
-                icon={<TrendingUp className="w-5 h-5 text-orange-500" />}
+                icon={<Award className="w-5 h-5" />}
                 label="Total Completed"
                 value={appointments
                   .filter((a) => a.status === "Completed")
                   .length.toString()}
+                color="orange"
                 darkMode={darkMode}
               />
             </div>
@@ -620,7 +743,7 @@ function SummaryCard({ icon, title, value, change, color, darkMode }) {
   );
 }
 
-// Appointment Card Component
+// Appointment Card Component - Enhanced
 function AppointmentCard({
   appointment,
   darkMode,
@@ -660,62 +783,57 @@ function AppointmentCard({
   const profileImage = getImage();
 
   return (
-    <div
-      className={`flex items-center justify-between p-4 ${
-        darkMode
-          ? "bg-gray-800 border-gray-700 hover:border-gray-600"
-          : "bg-gray-50 border-gray-200 hover:border-gray-300"
-      } border rounded-lg transition`}
-    >
-      <div className="flex items-center gap-4">
+    <div className="relative flex items-center justify-between p-4 bg-white dark:bg-gray-900 
+      border-2 border-gray-200 dark:border-gray-800 rounded-2xl transition-all duration-300 
+      hover:shadow-md hover:-translate-y-0.5 group">
+      {/* Decorative gradient bar on left */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${
+        appointment?.status === "Completed"
+          ? "bg-gradient-to-b from-green-500 to-emerald-500"
+          : appointment?.status === "Confirmed"
+          ? "bg-gradient-to-b from-blue-500 to-cyan-500"
+          : appointment?.status === "Cancelled"
+          ? "bg-gradient-to-b from-red-500 to-rose-500"
+          : "bg-gradient-to-b from-yellow-500 to-orange-500"
+      }`} />
+
+      <div className="flex items-center gap-4 flex-1">
         {profileImage ? (
           <img
             src={profileImage}
             alt={patientName}
-            className="w-12 h-12 rounded-full object-cover"
+            className="w-14 h-14 rounded-xl object-cover shadow-md"
           />
         ) : (
-          <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center font-semibold text-white">
+          <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl 
+            flex items-center justify-center font-bold text-white shadow-md text-lg">
             {getInitials()}
           </div>
         )}
-        <div>
-          <p
-            className={`font-medium ${
-              darkMode ? "text-white" : "text-gray-800"
-            }`}
-          >
+        <div className="flex-1">
+          <p className="font-bold text-gray-900 dark:text-white text-lg">
             {patientName}
           </p>
-          <p
-            className={`text-sm ${
-              darkMode ? "text-gray-400" : "text-gray-500"
-            }`}
-          >
+          <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
             {appointment?.reason || "General Consultation"}
           </p>
         </div>
       </div>
+      
       <div className="flex items-center gap-4">
         <div className="text-right">
-          <p
-            className={`text-sm font-medium ${
-              darkMode ? "text-gray-300" : "text-gray-600"
-            }`}
-          >
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
             {formatDate(appointment?.date)} • {appointment?.timeSlot || ""}
           </p>
-          <span
-            className={`inline-block px-3 py-1 mt-1 rounded-full text-xs font-medium ${
-              appointment?.status === "Completed"
-                ? "bg-green-500/20 text-green-500"
-                : appointment?.status === "Confirmed"
-                ? "bg-blue-500/20 text-blue-500"
-                : appointment?.status === "Cancelled"
-                ? "bg-red-500/20 text-red-500"
-                : "bg-yellow-500/20 text-yellow-600"
-            }`}
-          >
+          <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-bold border-2 ${
+            appointment?.status === "Completed"
+              ? "bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800"
+              : appointment?.status === "Confirmed"
+              ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+              : appointment?.status === "Cancelled"
+              ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800"
+              : "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
+          }`}>
             {appointment?.status || "Pending"}
           </span>
         </div>
@@ -726,18 +844,20 @@ function AppointmentCard({
             <button
               onClick={() => handleStatusUpdate(appointment._id, "Confirmed")}
               disabled={updatingStatus === appointment?._id}
-              className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition disabled:opacity-50"
+              className="p-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 
+                text-white rounded-xl transition disabled:opacity-50 shadow-md hover:shadow-lg"
               title="Confirm"
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-5 h-5" />
             </button>
             <button
               onClick={() => handleStatusUpdate(appointment._id, "Cancelled")}
               disabled={updatingStatus === appointment?._id}
-              className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition disabled:opacity-50"
+              className="p-2.5 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 
+                text-white rounded-xl transition disabled:opacity-50 shadow-md hover:shadow-lg"
               title="Cancel"
             >
-              <XCircle className="w-4 h-4" />
+              <XCircle className="w-5 h-5" />
             </button>
           </div>
         )}
@@ -745,9 +865,10 @@ function AppointmentCard({
           <button
             onClick={() => handleStatusUpdate(appointment._id, "Completed")}
             disabled={updatingStatus === appointment?._id}
-            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition disabled:opacity-50 flex items-center gap-1"
+            className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 
+              text-white font-semibold rounded-xl transition disabled:opacity-50 flex items-center gap-2 shadow-md hover:shadow-lg"
           >
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className="w-5 h-5" />
             Complete
           </button>
         )}
@@ -756,27 +877,43 @@ function AppointmentCard({
   );
 }
 
-// Quick Stat Component
-function QuickStat({ icon, label, value, darkMode }) {
+// Quick Stat Component - Redesigned
+function QuickStat({ icon, label, value, color, darkMode }) {
+  const colors = {
+    green: {
+      bg: "bg-green-500/10 dark:bg-green-500/20",
+      text: "text-green-600 dark:text-green-400",
+      border: "border-green-200 dark:border-green-900/30"
+    },
+    blue: {
+      bg: "bg-blue-500/10 dark:bg-blue-500/20",
+      text: "text-blue-600 dark:text-blue-400",
+      border: "border-blue-200 dark:border-blue-900/30"
+    },
+    purple: {
+      bg: "bg-purple-500/10 dark:bg-purple-500/20",
+      text: "text-purple-600 dark:text-purple-400",
+      border: "border-purple-200 dark:border-purple-900/30"
+    },
+    orange: {
+      bg: "bg-orange-500/10 dark:bg-orange-500/20",
+      text: "text-orange-600 dark:text-orange-400",
+      border: "border-orange-200 dark:border-orange-900/30"
+    }
+  };
+
+  const colorScheme = colors[color] || colors.blue;
+
   return (
-    <div
-      className={`${
-        darkMode ? "bg-gray-900 border-gray-800" : "bg-white border-gray-200"
-      } border rounded-xl p-4 shadow-sm`}
-    >
-      <div className="flex items-center gap-3 mb-2">
+    <div className={`bg-white dark:bg-gray-900 border-2 ${colorScheme.border} 
+      rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5`}>
+      <div className={`${colorScheme.bg} ${colorScheme.text} p-3 rounded-xl w-fit mb-3`}>
         {icon}
-        <span
-          className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}
-        >
-          {label}
-        </span>
       </div>
-      <p
-        className={`text-xl font-bold ${
-          darkMode ? "text-white" : "text-gray-800"
-        }`}
-      >
+      <span className="text-sm font-medium text-gray-600 dark:text-gray-400 block mb-1">
+        {label}
+      </span>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">
         {value}
       </p>
     </div>

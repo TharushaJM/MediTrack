@@ -12,7 +12,19 @@ import {
   FileText,
   MessageSquare,
   RefreshCw,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -139,6 +151,11 @@ export default function DoctorPatients({ onOpenChat, onOpenReports }) {
   const [reports, setReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(false);
 
+  // Wellness records state
+  const [wellnessRecords, setWellnessRecords] = useState([]);
+  const [loadingWellness, setLoadingWellness] = useState(false);
+  const [showWellnessChart, setShowWellnessChart] = useState(false);
+
   const token = cleanToken(localStorage.getItem("token") || "");
 
   const fetchPatients = async () => {
@@ -194,6 +211,27 @@ export default function DoctorPatients({ onOpenChat, onOpenReports }) {
       setReports([]);
     } finally {
       setLoadingReports(false);
+    }
+  };
+
+  // Fetch patient wellness records
+  const fetchWellnessRecords = async (patientId) => {
+    setLoadingWellness(true);
+    try {
+      const { data } = await axios.get(
+        `${API_URL}/api/doctor/patients/${patientId}/records`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Sort by date and take last 30 days
+      const sortedRecords = (Array.isArray(data) ? data : [])
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(-30);
+      setWellnessRecords(sortedRecords);
+    } catch (e) {
+      console.log("Failed to load wellness records:", e?.response?.data || e.message);
+      setWellnessRecords([]);
+    } finally {
+      setLoadingWellness(false);
     }
   };
   
@@ -549,6 +587,147 @@ export default function DoctorPatients({ onOpenChat, onOpenReports }) {
                           </div>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Wellness Trend Chart */}
+                    <div className="mt-6">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          Wellness Trends
+                        </h3>
+                        <button
+                          onClick={() => {
+                            if (!showWellnessChart && selectedPatient?._id) {
+                              fetchWellnessRecords(selectedPatient._id);
+                            }
+                            setShowWellnessChart(!showWellnessChart);
+                          }}
+                          className="px-3 py-1.5 text-sm bg-blue-50 hover:bg-blue-100 dark:bg-gray-800 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-lg transition flex items-center gap-2"
+                        >
+                          <Activity className="w-4 h-4" />
+                          {showWellnessChart ? "Hide Chart" : "View Chart"}
+                        </button>
+                      </div>
+
+                      {showWellnessChart && (
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                          {loadingWellness ? (
+                            <div className="text-center py-8">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                                Loading wellness data...
+                              </p>
+                            </div>
+                          ) : wellnessRecords.length === 0 ? (
+                            <div className="text-center py-8">
+                              <Activity className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                              <p className="text-sm text-gray-700 dark:text-gray-300">
+                                No wellness data available
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Patient hasn't logged any daily check-ins yet
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                Last {wellnessRecords.length} days of patient wellness tracking
+                              </p>
+                              <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={wellnessRecords.map(r => ({
+                                  date: new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                                  mood: r.mood || 0,
+                                  sleep: r.sleepHours || 0,
+                                  water: r.waterIntake || 0,
+                                  energy: r.energy || 0,
+                                }))}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                                  <XAxis 
+                                    dataKey="date" 
+                                    stroke="#9CA3AF" 
+                                    style={{ fontSize: '12px' }}
+                                    interval="preserveStartEnd"
+                                  />
+                                  <YAxis 
+                                    stroke="#9CA3AF" 
+                                    style={{ fontSize: '12px' }}
+                                  />
+                                  <Tooltip 
+                                    contentStyle={{ 
+                                      backgroundColor: '#1F2937', 
+                                      border: '1px solid #374151',
+                                      borderRadius: '8px',
+                                      color: '#fff'
+                                    }}
+                                  />
+                                  <Legend />
+                                  <Line 
+                                    type="monotone" 
+                                    dataKey="mood" 
+                                    stroke="#3B82F6" 
+                                    strokeWidth={2}
+                                    name="Mood (1-10)"
+                                    dot={{ fill: '#3B82F6' }}
+                                  />
+                                  <Line 
+                                    type="monotone" 
+                                    dataKey="sleep" 
+                                    stroke="#8B5CF6" 
+                                    strokeWidth={2}
+                                    name="Sleep (hrs)"
+                                    dot={{ fill: '#8B5CF6' }}
+                                  />
+                                  <Line 
+                                    type="monotone" 
+                                    dataKey="water" 
+                                    stroke="#10B981" 
+                                    strokeWidth={2}
+                                    name="Water (cups)"
+                                    dot={{ fill: '#10B981' }}
+                                  />
+                                  <Line 
+                                    type="monotone" 
+                                    dataKey="energy" 
+                                    stroke="#F59E0B" 
+                                    strokeWidth={2}
+                                    name="Energy (1-10)"
+                                    dot={{ fill: '#F59E0B' }}
+                                  />
+                                </LineChart>
+                              </ResponsiveContainer>
+
+                              {/* Summary Stats */}
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Avg Mood</p>
+                                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                    {(wellnessRecords.reduce((sum, r) => sum + (r.mood || 0), 0) / wellnessRecords.filter(r => r.mood).length || 0).toFixed(1)}
+                                  </p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Avg Sleep</p>
+                                  <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                                    {(wellnessRecords.reduce((sum, r) => sum + (r.sleepHours || 0), 0) / wellnessRecords.filter(r => r.sleepHours).length || 0).toFixed(1)}h
+                                  </p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Avg Water</p>
+                                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                                    {(wellnessRecords.reduce((sum, r) => sum + (r.waterIntake || 0), 0) / wellnessRecords.filter(r => r.waterIntake).length || 0).toFixed(1)}
+                                  </p>
+                                </div>
+                                <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Avg Energy</p>
+                                  <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                                    {(wellnessRecords.reduce((sum, r) => sum + (r.energy || 0), 0) / wellnessRecords.filter(r => r.energy).length || 0).toFixed(1)}
+                                  </p>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* ✅ Appointment history */}

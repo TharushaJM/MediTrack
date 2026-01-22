@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Star, MapPin, Clock, Filter, ChevronDown, Stethoscope, Heart, Brain, Bone, Eye, Baby, Smile, Activity, Loader2, GraduationCap, X, Calendar, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { Search, MapPin, Clock, Filter, ChevronDown, Stethoscope, Heart, Brain, Bone, Eye, Baby, Smile, Activity, Loader2, GraduationCap, X, Calendar, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -67,15 +67,6 @@ export default function FindDoctor() {
     }
     setFilteredDoctors(results);
   }, [searchQuery, selectedSpecialization, doctors]);
-
-  const renderStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating || 4.5);
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={i} size={14} className="fill-yellow-400 text-yellow-400" />);
-    }
-    return stars;
-  };
 
   const getProfileImage = (doctor) => {
     if (doctor.profileImage) {
@@ -462,19 +453,6 @@ export default function FindDoctor() {
                     </span>
                   </div>
 
-                  {/* Rating */}
-                  <div className="flex items-center justify-center gap-1 mb-4">
-                    <div className="flex items-center gap-0.5">
-                      {renderStars(4.5)}
-                    </div>
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 ml-1">
-                      4.5
-                    </span>
-                    <span className="text-sm text-gray-400">
-                      (100+ reviews)
-                    </span>
-                  </div>
-
                   {/* Details */}
                   <div className="space-y-2 mb-5">
                     {doctor.degree && (
@@ -486,12 +464,6 @@ export default function FindDoctor() {
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       <MapPin size={14} className="text-gray-400 flex-shrink-0" />
                       <span className="truncate">{doctor.location || doctor.lastWorkPlace || "Not specified"}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock size={14} className="text-[#28A745] flex-shrink-0" />
-                      <span className="text-[#28A745] font-medium">
-                        Available Today
-                      </span>
                     </div>
                   </div>
 

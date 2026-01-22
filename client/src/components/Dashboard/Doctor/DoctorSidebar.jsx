@@ -76,12 +76,7 @@ export default function DoctorSidebar({ activeMenu, setActiveMenu }) {
             active={activeMenu === "profile"}
             onClick={() => setActiveMenu("profile")}
           />
-          <NavItem
-            icon={<Settings size={20} />}
-            text="Settings"
-            active={activeMenu === "settings"}
-            onClick={() => setActiveMenu("settings")}
-          />
+        
         </nav>
       </div>
 

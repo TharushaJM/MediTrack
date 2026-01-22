@@ -2,6 +2,7 @@ import Appointment from "../models/Appointment.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
 import Consent from "../models/Consent.js";
+import Record from "../models/Record.js";
 import mongoose from "mongoose";
 
 
@@ -135,6 +136,41 @@ export const getMyPatientReports = async (req, res) => {
     return res.status(500).json({
       message: err.message,
       name: err.name,
+    });
+  }
+};
+
+// GET /api/doctor/patients/:patientId/records
+export const getMyPatientRecords = async (req, res) => {
+  try {
+    const doctorId = req.user._id;
+    const { patientId } = req.params;
+
+    // Validate patientId
+    if (!mongoose.Types.ObjectId.isValid(patientId)) {
+      return res.status(400).json({ message: "Invalid patientId" });
+    }
+
+    // Security: must have appointment relationship
+    const relationship = await Appointment.findOne({ doctorId, patientId });
+    if (!relationship) {
+      return res.status(403).json({ 
+        message: "Access denied: no appointments with this patient" 
+      });
+    }
+
+    // Fetch wellness records (daily check-ins)
+    const records = await Record.find({ userId: patientId })
+      .sort({ date: -1 })
+      .limit(90) // Last 90 days
+      .select('date mood sleepHours waterIntake energy stress weight bmi');
+
+    return res.json(records);
+  } catch (err) {
+    console.error("getMyPatientRecords error:", err);
+    return res.status(500).json({ 
+      message: "Failed to fetch patient wellness records",
+      error: err.message 
     });
   }
 };

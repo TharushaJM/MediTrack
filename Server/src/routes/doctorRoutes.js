@@ -4,6 +4,7 @@ import {
   getMyPatients,
   getMyPatientDetails,
   getMyPatientReports,
+  getMyPatientRecords,
 } from "../controllers/doctorController.js";
 
 const router = express.Router();
@@ -16,6 +17,9 @@ router.get("/patients/:patientId", protect, approvedDoctorOnly, getMyPatientDeta
 
 //this us to fetch patient report
 router.get("/patients/:patientId/reports", protect,approvedDoctorOnly,getMyPatientReports);
+
+// Fetch patient wellness records (daily check-ins)
+router.get("/patients/:patientId/records", protect, approvedDoctorOnly, getMyPatientRecords);
 
 
 export default router;

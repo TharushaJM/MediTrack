@@ -15,6 +15,14 @@ import {
   Smile,
   Trash2,
   FileText,
+  Flame,
+  Heart,
+  Weight,
+  ArrowUp,
+  ArrowDown,
+  Target,
+  Award,
+  Zap,
 } from "lucide-react";
 
 export default function PatientDashboard() {
@@ -62,10 +70,6 @@ export default function PatientDashboard() {
     fetchProfile();
   }, []);
 
-  useEffect(() => {
-    fetchRecords();
-  }, []);
-
   async function handleDelete(id) {
     try {
       const token = localStorage.getItem("token");
@@ -78,105 +82,216 @@ export default function PatientDashboard() {
     }
   }
 
+  // Calculate health metrics
+  const getHealthMetrics = () => {
+    if (!records.length) return null;
+
+    // Current week's records
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thisWeek = records.filter((r) => new Date(r.createdAt) >= weekAgo);
+    const lastWeek = records.filter(
+      (r) =>
+        new Date(r.createdAt) >= new Date(weekAgo.getTime() - 7 * 24 * 60 * 60 * 1000) &&
+        new Date(r.createdAt) < weekAgo
+    );
+
+    // Calculate streak (consecutive days with records)
+    const sortedDates = records
+      .map((r) => new Date(r.date || r.createdAt).toDateString())
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort((a, b) => new Date(b) - new Date(a));
+
+    let streak = 0;
+    let currentDate = new Date();
+    for (let date of sortedDates) {
+      const recordDate = new Date(date);
+      const diffDays = Math.floor(
+        (currentDate - recordDate) / (1000 * 60 * 60 * 24)
+      );
+      if (diffDays === streak) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    // Average sleep
+    const sleepRecords = records.filter((r) => r.sleepHours);
+    const avgSleep =
+      sleepRecords.length > 0
+        ? (
+            sleepRecords.reduce((sum, r) => sum + r.sleepHours, 0) /
+            sleepRecords.length
+          ).toFixed(1)
+        : 0;
+
+    // Sleep goal progress
+    const sleepGoal = 8;
+    const sleepProgress = Math.min((avgSleep / sleepGoal) * 100, 100);
+
+    // Average mood
+    const moodRecords = records.filter((r) => r.mood);
+    const avgMood =
+      moodRecords.length > 0
+        ? (
+            moodRecords.reduce((sum, r) => sum + r.mood, 0) / moodRecords.length
+          ).toFixed(1)
+        : 0;
+
+    // Water intake today
+    const today = new Date().toDateString();
+    const todayRecord = records.find(
+      (r) => new Date(r.date || r.createdAt).toDateString() === today
+    );
+    const waterToday = todayRecord?.waterIntake || 0;
+    const waterGoal = 2.5;
+    const waterProgress = Math.min((waterToday / waterGoal) * 100, 100);
+
+    return {
+      streak,
+      avgSleep,
+      sleepProgress,
+      avgMood,
+      waterToday,
+      waterProgress,
+      waterGoal,
+      thisWeekCount: thisWeek.length,
+      lastWeekCount: lastWeek.length,
+    };
+  };
+
+  const metrics = getHealthMetrics();
+
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-950">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100">
-              Your Health Hub
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+              Welcome back, {profile?.firstName || "there"}! 
             </h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              Track and monitor your wellness journey effortlessly
+            <p className="text-gray-600 dark:text-gray-400">
+              Here's your health overview for today
             </p>
           </div>
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center gap-2 
-              bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 
-              text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-xl 
-              transition-all duration-200 font-medium"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 
+              text-white px-5 py-3 rounded-xl shadow-lg hover:shadow-xl 
+              transition-all duration-200 font-semibold"
           >
             <PlusCircle className="w-5 h-5" />
-            Add Record
+            Log Health Data
           </button>
         </header>
 
-        {/* Quick Stats */}
-        <div className="grid sm:grid-cols-3 gap-6 mb-10">
-          <StatCard
-            label="Total Records"
-            value={records.length}
-            sub="+3 this week"
-            icon={
-              <Activity className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+        {/* Health Metric Cards - Inspired by your screenshot */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          {/* Logging Streak Card */}
+          <HealthMetricCard
+            icon={<Flame className="w-6 h-6" />}
+            iconBg="bg-orange-500/10 dark:bg-orange-500/20"
+            iconColor="text-orange-600 dark:text-orange-400"
+            label="Logging Streak"
+            value={`${metrics?.streak || 0} Days`}
+            subtitle={
+              metrics?.streak > 0
+                ? `Keep it going! 🔥`
+                : "Start tracking today"
             }
+            borderColor="border-orange-200 dark:border-orange-900/30"
           />
-          <StatCard
-            label="Last Update"
-            value={
-              records[0]
-                ? new Date(
-                    records[0].date || records[0].createdAt
-                  ).toLocaleDateString()
-                : "—"
-            }
-            sub={records[0] ? "Updated recently" : ""}
-            icon={
-              <Calendar className="w-6 h-6 text-green-500 dark:text-green-400" />
-            }
+
+          {/* Sleep Average Card */}
+          <HealthMetricCard
+            icon={<Moon className="w-6 h-6" />}
+            iconBg="bg-blue-500/10 dark:bg-blue-500/20"
+            iconColor="text-blue-600 dark:text-blue-400"
+            label="Sleep Average"
+            value={`${metrics?.avgSleep || 0}h`}
+            subtitle="This week's average"
+            progress={metrics?.sleepProgress || 0}
+            progressText={`${Math.round(metrics?.sleepProgress || 0)}% of 8h goal`}
+            borderColor="border-blue-200 dark:border-blue-900/30"
           />
-          <StatCard
-            label="This Month"
-            value={
-              records.filter(
-                (r) =>
-                  new Date(r.createdAt).getMonth() === new Date().getMonth()
-              ).length
+
+          {/* Mood Score Card */}
+          <HealthMetricCard
+            icon={<Smile className="w-6 h-6" />}
+            iconBg="bg-yellow-500/10 dark:bg-yellow-500/20"
+            iconColor="text-yellow-600 dark:text-yellow-400"
+            label="Mood Score"
+            value={`${metrics?.avgMood || 0}/10`}
+            subtitle={
+              metrics?.avgMood >= 7
+                ? "Feeling great! 😊"
+                : metrics?.avgMood >= 5
+                ? "Doing okay 😌"
+                : "Take care of yourself 💙"
             }
-            sub="Records logged"
-            icon={
-              <TrendingUp className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+            borderColor="border-yellow-200 dark:border-yellow-900/30"
+          />
+
+          {/* Water Intake Card */}
+          <HealthMetricCard
+            icon={<Droplets className="w-6 h-6" />}
+            iconBg="bg-cyan-500/10 dark:bg-cyan-500/20"
+            iconColor="text-cyan-600 dark:text-cyan-400"
+            label="Water Today"
+            value={`${metrics?.waterToday || 0}L`}
+            subtitle="Daily intake"
+            badge={
+              metrics?.waterToday >= metrics?.waterGoal
+                ? "Goal reached! 💧"
+                : `${(metrics?.waterGoal - metrics?.waterToday).toFixed(1)}L to go`
             }
+            progress={metrics?.waterProgress || 0}
+            borderColor="border-cyan-200 dark:border-cyan-900/30"
           />
         </div>
 
         {/* Records Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
           <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <LayoutList className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Health Records
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                View and manage your daily health insights
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {records.length} total entries • Last updated{" "}
+                {records[0]
+                  ? new Date(records[0].createdAt).toLocaleDateString()
+                  : "N/A"}
               </p>
             </div>
 
             {/* View toggle */}
             <div className="flex items-center gap-3">
-              <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 border border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setViewMode("simple")}
-                  className={`px-4 py-2 text-sm rounded-md font-medium transition ${
+                  className={`px-4 py-2 text-sm rounded-lg font-semibold transition-all ${
                     viewMode === "simple"
-                      ? "bg-white dark:bg-gray-900 shadow text-blue-600 dark:text-blue-400"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100"
+                      ? "bg-white dark:bg-gray-900 shadow-sm text-blue-600 dark:text-blue-400"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                   }`}
                 >
-                  Simple View
+                  <LayoutList className="w-4 h-4 inline mr-1.5" />
+                  List View
                 </button>
                 <button
                   onClick={() => setViewMode("chart")}
-                  className={`px-4 py-2 text-sm rounded-md font-medium transition ${
+                  className={`px-4 py-2 text-sm rounded-lg font-semibold transition-all ${
                     viewMode === "chart"
-                      ? "bg-white dark:bg-gray-900 shadow text-blue-600 dark:text-blue-400"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100"
+                      ? "bg-white dark:bg-gray-900 shadow-sm text-blue-600 dark:text-blue-400"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                   }`}
                 >
-                  Graph View
+                  <BarChart2 className="w-4 h-4 inline mr-1.5" />
+                  Charts
                 </button>
               </div>
             </div>
@@ -213,6 +328,76 @@ export default function PatientDashboard() {
    COMPONENTS
 ------------------------ */
 
+// New Health Metric Card Component (inspired by the screenshot)
+function HealthMetricCard({
+  icon,
+  iconBg,
+  iconColor,
+  label,
+  value,
+  subtitle,
+  badge,
+  progress,
+  progressText,
+  borderColor,
+}) {
+  return (
+    <div
+      className={`relative bg-gradient-to-br from-white to-gray-50 
+        dark:from-gray-900 dark:to-gray-950 
+        border-2 ${borderColor}
+        rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 
+        hover:-translate-y-1 group`}
+    >
+      {/* Icon */}
+      <div className={`${iconBg} ${iconColor} p-3 rounded-xl w-fit mb-4`}>
+        {icon}
+      </div>
+
+      {/* Label */}
+      <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+        {label}
+      </div>
+
+      {/* Value */}
+      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        {value}
+      </div>
+
+      {/* Subtitle */}
+      {subtitle && (
+        <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          {subtitle}
+        </div>
+      )}
+
+      {/* Badge */}
+      {badge && (
+        <div className="inline-block px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-semibold rounded-full mb-3">
+          {badge}
+        </div>
+      )}
+
+      {/* Progress Bar */}
+      {progress !== undefined && (
+        <div className="mt-3">
+          <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          {progressText && (
+            <div className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-right font-medium">
+              {progressText}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatCard({ label, value, sub, icon }) {
   return (
     <div
@@ -244,20 +429,24 @@ function StatCard({ label, value, sub, icon }) {
 function SimpleView({ records, onDelete }) {
   if (!records.length)
     return (
-      <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center">
+      <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 
+        border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-16 text-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-            <FileText className="w-10 h-10 text-blue-500 dark:text-blue-400" />
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
+            <FileText className="w-10 h-10 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">
-              No health records yet
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Start Your Health Journey
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Start tracking your wellness journey by clicking{" "}
-              <span className="font-semibold text-blue-600 dark:text-blue-400">
-                "Add Record"
-              </span>
+            <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
+              Track your daily wellness metrics like sleep, mood, water intake, and more.
+              <br />
+              Click{" "}
+              <span className="font-bold text-blue-600 dark:text-blue-400">
+                "Log Health Data"
+              </span>{" "}
+              to begin!
             </p>
           </div>
         </div>
@@ -269,34 +458,38 @@ function SimpleView({ records, onDelete }) {
       {records.map((r, i) => (
         <div
           key={r._id || i}
-          className="border border-gray-200 dark:border-gray-700 rounded-2xl p-6 bg-white dark:bg-gray-900 
-            shadow-sm hover:shadow-lg transition-all duration-200 group"
+          className="border border-gray-200 dark:border-gray-800 rounded-2xl p-6 
+            bg-white dark:bg-gray-900 shadow-sm hover:shadow-md 
+            transition-all duration-200 group relative overflow-hidden"
         >
+          {/* Decorative gradient bar on left */}
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-cyan-500 to-purple-500" />
+
           {/* Header with Date and Actions */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-md">
+                <Calendar className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                <h3 className="font-bold text-gray-900 dark:text-white text-lg">
                   {new Date(r.date || r.createdAt).toLocaleDateString("en-US", {
-                    weekday: "short",
+                    weekday: "long",
                     year: "numeric",
                     month: "short",
                     day: "numeric",
                   })}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Health check-in
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Health Check-in • {new Date(r.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
             </div>
             <button
               onClick={() => onDelete(r._id)}
               className="opacity-0 group-hover:opacity-100 transition-opacity
-                p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 
-                rounded-lg flex items-center gap-1 text-sm"
+                p-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 
+                rounded-xl flex items-center gap-2 text-sm font-semibold"
             >
               <Trash2 className="w-4 h-4" />
               Delete
@@ -304,7 +497,7 @@ function SimpleView({ records, onDelete }) {
           </div>
 
           {/* Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {r.sleepHours && (
               <MetricBadge
                 icon={<Moon className="w-4 h-4" />}
@@ -341,10 +534,13 @@ function SimpleView({ records, onDelete }) {
 
           {/* Notes */}
           {r.notes && (
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-300 italic">
-                " {r.notes}"
-              </p>
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex items-start gap-2">
+                <FileText className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {r.notes}
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -353,23 +549,25 @@ function SimpleView({ records, onDelete }) {
   );
 }
 
-// ✅ New MetricBadge Component for color-coded metrics
+// Enhanced MetricBadge Component with better styling
 function MetricBadge({ icon, label, value, color }) {
   const colors = {
-    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
-    cyan: "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300",
+    blue: "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    cyan: "bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-900/30 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800",
     yellow:
-      "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300",
+      "bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-900/30 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800",
     purple:
-      "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300",
+      "bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
   };
 
   return (
-    <div className={`${colors[color]} rounded-xl p-3 flex items-center gap-2`}>
+    <div
+      className={`${colors[color]} rounded-xl p-3 flex items-center gap-2 border shadow-sm`}
+    >
       {icon}
       <div>
-        <div className="text-xs opacity-75">{label}</div>
-        <div className="font-semibold">{value}</div>
+        <div className="text-xs opacity-75 font-medium">{label}</div>
+        <div className="font-bold text-base">{value}</div>
       </div>
     </div>
   );
@@ -378,17 +576,18 @@ function MetricBadge({ icon, label, value, color }) {
 function GraphView({ records }) {
   if (!records.length)
     return (
-      <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center">
+      <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 
+        border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-16 text-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-            <BarChart2 className="w-10 h-10 text-blue-500 dark:text-blue-400" />
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+            <BarChart2 className="w-10 h-10 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">
-              Not enough data yet
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Not enough data for charts
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Add more health records to see visual charts and trends
+            <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
+              Log at least 3-5 health records to see beautiful charts and visualize your wellness trends over time.
             </p>
           </div>
         </div>
@@ -396,38 +595,47 @@ function GraphView({ records }) {
     );
 
   return (
-    <>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div className="space-y-8">
+      {/* Mini Metric Charts Grid */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricChart
-          title="Mood"
+          title="Mood Trend"
           data={records}
           dataKey="mood"
           color="#6366f1"
           unit="/10"
         />
         <MetricChart
-          title="Sleep"
+          title="Sleep Quality"
           data={records}
           dataKey="sleepHours"
           color="#22c55e"
           unit="hrs"
         />
         <MetricChart
-          title="Water Intake"
+          title="Hydration"
           data={records}
           dataKey="waterIntake"
           color="#06b6d4"
           unit="L"
         />
         <MetricChart
-          title="BMI"
+          title="Body Mass Index"
           data={records}
           dataKey="bmi"
           color="#f59e0b"
           unit=""
         />
       </div>
-      <WellnessChart records={records} />
-    </>
+
+      {/* Main Wellness Chart */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          Overall Wellness Trends
+        </h3>
+        <WellnessChart records={records} />
+      </div>
+    </div>
   );
 }

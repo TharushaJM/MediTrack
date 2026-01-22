@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, Moon, Sun } from "lucide-react";
+import { Bell, Search, Moon, Sun, User } from "lucide-react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../../context/ThemeContext";
 
-export default function DoctorHeader({ doctor }) {
+export default function DoctorHeader({ doctor, onNavigateToPatients, onSelectPatient }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const { darkMode, toggleDarkMode } = useTheme();
+  const searchRef = useRef(null);
 
   // notifications
   const [notifOpen, setNotifOpen] = useState(false);
@@ -18,6 +22,80 @@ export default function DoctorHeader({ doctor }) {
   const notifRef = useRef(null);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+  // Search patients function
+  const searchPatients = async (query) => {
+    if (!query || query.trim().length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      const token = getToken();
+      const res = await axios.get(`${API_URL}/api/doctor/patients`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const patients = (res.data || []).map(x => x.patient).filter(Boolean);
+      
+      // Filter patients by search query
+      const filtered = patients.filter(patient => {
+        const fullName = `${patient.firstName || ""} ${patient.lastName || ""}`.toLowerCase();
+        const email = (patient.email || "").toLowerCase();
+        const phone = (patient.phone || "").toLowerCase();
+        const searchLower = query.toLowerCase();
+        
+        return fullName.includes(searchLower) || 
+               email.includes(searchLower) || 
+               phone.includes(searchLower);
+      });
+
+      setSearchResults(filtered.slice(0, 5)); // Limit to 5 results
+      setShowSearchResults(true);
+    } catch (err) {
+      console.log("Search error:", err?.response?.data || err.message);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchPatients(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Close search results on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearchResults(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Handle patient selection
+  const handleSelectPatient = (patient) => {
+    setSearchQuery("");
+    setShowSearchResults(false);
+    setSearchResults([]);
+    
+    // Navigate to patients page and optionally select this patient
+    if (onNavigateToPatients) {
+      onNavigateToPatients();
+    }
+    if (onSelectPatient) {
+      onSelectPatient(patient);
+    }
+  };
 
   // Get profile image URL
   const getProfileImage = () => {
@@ -158,7 +236,7 @@ export default function DoctorHeader({ doctor }) {
     >
       <div className="flex items-center justify-between">
         {/* Left - Search Bar */}
-        <div className="flex-1 max-w-md">
+        <div className="flex-1 max-w-md relative" ref={searchRef}>
           <div className="relative">
             <Search
               className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
@@ -167,9 +245,10 @@ export default function DoctorHeader({ doctor }) {
             />
             <input
               type="text"
-              placeholder="Search patients, appointments..."
+              placeholder="Search patients by name, email, or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
               className={`w-full pl-10 pr-4 py-2 rounded-lg text-sm ${
                 darkMode
                   ? "bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-500"
@@ -177,6 +256,81 @@ export default function DoctorHeader({ doctor }) {
               } border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
             />
           </div>
+
+          {/* Search Results Dropdown */}
+          <AnimatePresence>
+            {showSearchResults && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className={`absolute top-full left-0 right-0 mt-2 ${
+                  darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+                } border rounded-xl shadow-lg z-50 max-h-80 overflow-y-auto`}
+              >
+                {searchLoading ? (
+                  <div className="p-4 text-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className={`text-sm mt-2 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                      Searching...
+                    </p>
+                  </div>
+                ) : searchResults.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                      {searchQuery.length < 2 
+                        ? "Type at least 2 characters to search" 
+                        : "No patients found"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="py-2">
+                    {searchResults.map((patient) => (
+                      <button
+                        key={patient._id}
+                        onClick={() => handleSelectPatient(patient)}
+                        className={`w-full px-4 py-3 flex items-center gap-3 ${
+                          darkMode 
+                            ? "hover:bg-gray-700" 
+                            : "hover:bg-gray-50"
+                        } transition-colors text-left`}
+                      >
+                        {/* Patient Avatar */}
+                        {patient.profileImage ? (
+                          <img
+                            src={
+                              patient.profileImage.startsWith("http")
+                                ? patient.profileImage
+                                : `${API_URL}${patient.profileImage}`
+                            }
+                            alt={`${patient.firstName} ${patient.lastName}`}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-semibold">
+                            {(patient.firstName?.[0] || "") + (patient.lastName?.[0] || "")}
+                          </div>
+                        )}
+
+                        {/* Patient Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>
+                            {patient.firstName} {patient.lastName}
+                          </p>
+                          <p className={`text-xs ${darkMode ? "text-gray-400" : "text-gray-500"} truncate`}>
+                            {patient.email || patient.phone || "No contact info"}
+                          </p>
+                        </div>
+
+                        {/* Arrow Icon */}
+                        <User className={`w-4 h-4 ${darkMode ? "text-gray-500" : "text-gray-400"}`} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Right side */}

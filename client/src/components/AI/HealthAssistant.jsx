@@ -321,7 +321,7 @@ export default function HealthAssistant() {
 
   return (
     <div className="p-6 min-h-screen">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
@@ -331,36 +331,39 @@ export default function HealthAssistant() {
                 AI Health Assistant
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Select a report to get an instant AI summary and chat insights
+                Select a report to get AI insights and ask questions
               </p>
             </div>
           </div>
         </div>
 
-        {/* Report Selector */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
-          <h2 className="font-semibold text-lg mb-2 text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <FileText className="text-blue-600 dark:text-blue-400" /> Choose
-            Report
-          </h2>
+        {/* Main Split Layout */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Left Side - Report Selection & Summary */}
+          <div className="space-y-6">
+            {/* Report Selector */}
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
+              <h2 className="font-semibold text-lg mb-2 text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <FileText className="text-blue-600 dark:text-blue-400" /> Choose Report
+              </h2>
 
-          <select
-            value={selectedReportId} // ✅ controlled
-            onChange={(e) => handleSelectReport(e.target.value)}
-            className="w-full rounded-lg p-2 outline-none
-                border border-gray-200 dark:border-gray-700
-                bg-white dark:bg-gray-800
-                text-gray-900 dark:text-gray-100
-                focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
-          >
-            <option value="">-- Select a report --</option>
-            {reports.map((r) => (
-              <option key={r._id} value={r._id}>
-                {r.type} - {new Date(r.createdAt).toLocaleDateString()}
-              </option>
-            ))}
-          </select>
-        </div>
+              <select
+                value={selectedReportId}
+                onChange={(e) => handleSelectReport(e.target.value)}
+                className="w-full rounded-lg p-2 outline-none
+                    border border-gray-200 dark:border-gray-700
+                    bg-white dark:bg-gray-800
+                    text-gray-900 dark:text-gray-100
+                    focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500"
+              >
+                <option value="">-- Select a report --</option>
+                {reports.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.type} - {new Date(r.createdAt).toLocaleDateString()}
+                  </option>
+                ))}
+              </select>
+            </div>
 
         {/* ✅ Empty state when no report selected */}
         {!selectedReport && <EmptyState />}
@@ -508,18 +511,16 @@ export default function HealthAssistant() {
                     <FileText className="w-4 h-4" />
                     View Full Report
                   </a>
-                  <span className="text-xs text-gray-400">
-                    AI-generated • Not a replacement for medical advice
-                  </span>
+                  
                 </div>
               </div>
             )}
           </div>
         )}
+          </div>
 
-        {/* Chat Section */}
-        {selectedReport && (
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 h-[500px] flex flex-col">
+          {/* Right Side - Chat Section (Always Visible) */}
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 h-[600px] flex flex-col">
             <div className="flex items-center gap-2 mb-4">
               <MessageSquare className="text-blue-600 dark:text-blue-400" />
               <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100">
@@ -529,9 +530,16 @@ export default function HealthAssistant() {
 
             <div className="flex-1 overflow-y-auto mb-4 space-y-3">
               {messages.length === 0 && (
-                <p className="text-gray-400 text-sm text-center mt-20">
-                  Ask about your selected report...
-                </p>
+                <div className="text-gray-400 text-sm text-center mt-20 space-y-3">
+                  {selectedReport ? (
+                    <p>Ask questions about your selected report...</p>
+                  ) : (
+                    <>
+                      <p>💬 Select a report to start a conversation</p>
+                      <p className="text-xs">Or ask general health questions!</p>
+                    </>
+                  )}
+                </div>
               )}
 
               {messages.map((msg, i) => (
@@ -557,11 +565,11 @@ export default function HealthAssistant() {
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                placeholder="Ask a question..."
+                placeholder={selectedReport ? "Ask about your report..." : "Ask a general health question..."}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                className="flex-1 border dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+                className="flex-1 px-4 py-3 rounded-xl outline-none text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-400"
               />
               <button
                 onClick={handleSend}
@@ -571,7 +579,7 @@ export default function HealthAssistant() {
               </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
