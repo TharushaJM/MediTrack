@@ -295,7 +295,7 @@ export default function HealthAssistant() {
   const EmptyState = () => (
     <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6">
       <h2 className="font-semibold text-lg text-gray-800 dark:text-gray-100 flex items-center gap-2">
-        <Brain className="text-blue-600 dark:text-blue-400 w-5 h-5" />
+        
         Select a report to see insights
       </h2>
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -422,7 +422,7 @@ export default function HealthAssistant() {
                               key={idx}
                               className="flex items-start gap-2 bg-white/50 dark:bg-gray-900/50 rounded-lg p-3"
                             >
-                              <span className="text-lg">📊</span>
+                              <Activity className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                               <span className="text-gray-800 dark:text-gray-100 flex-1 text-sm leading-relaxed">
                                 {num}
                               </span>
@@ -535,7 +535,7 @@ export default function HealthAssistant() {
                     <p>Ask questions about your selected report...</p>
                   ) : (
                     <>
-                      <p>💬 Select a report to start a conversation</p>
+                      <p> Select a report to start a conversation</p>
                       <p className="text-xs">Or ask general health questions!</p>
                     </>
                   )}

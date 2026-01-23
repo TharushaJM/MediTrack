@@ -23,6 +23,10 @@ import {
   Target,
   Award,
   Zap,
+  Brain,
+  Utensils,
+  Droplet,
+  RefreshCw,
 } from "lucide-react";
 
 export default function PatientDashboard() {
@@ -33,6 +37,10 @@ export default function PatientDashboard() {
 
   const [profile, setProfile] = useState(null);
 
+  const [insights, setInsights] = useState(null);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [insightsError, setInsightsError] = useState("");
+
   // ✅ Fetch records
   async function fetchRecords() {
     try {
@@ -41,12 +49,62 @@ export default function PatientDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRecords(
-        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
       );
     } catch (err) {
       console.error("Error fetching records", err);
     } finally {
       setLoading(false);
+    }
+  }
+  //Daily Insgiht
+  async function fetchInsights(forceRefresh = false) {
+    try {
+      setInsightsError("");
+      setInsightsLoading(true);
+
+      // Check if we already have insights for today in localStorage (unless force refresh)
+      const today = new Date().toDateString();
+      const cachedInsights = localStorage.getItem("dailyInsights");
+      const cachedDate = localStorage.getItem("insightsDate");
+
+      if (!forceRefresh && cachedInsights && cachedDate === today) {
+        // Use cached insights from today
+        console.log("Using cached insights from today");
+        setInsights(JSON.parse(cachedInsights));
+        setInsightsLoading(false);
+        return;
+      }
+
+      // Fetch new insights from API
+      console.log(forceRefresh ? "Force refreshing insights..." : "Fetching new insights...");
+      const token = localStorage.getItem("token");
+      const { data } = await axios.post(
+        "http://localhost:5000/api/ai/insights/today",
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      
+      // Save to localStorage with today's date
+      localStorage.setItem("dailyInsights", JSON.stringify(data));
+      localStorage.setItem("insightsDate", today);
+      
+      setInsights(data);
+    } catch (err) {
+      console.error("Error fetching insights", err);
+      
+      // Better error message based on error type
+      const errorMsg = err?.response?.data?.error || err?.message || "Unknown error";
+      
+      if (errorMsg.includes("overloaded") || errorMsg.includes("503")) {
+        setInsightsError("AI service is busy right now. Please try again in a moment.");
+      } else if (errorMsg.includes("401") || errorMsg.includes("Unauthorized")) {
+        setInsightsError("Session expired. Please refresh the page.");
+      } else {
+        setInsightsError("Couldn't load today's insights. Please try again.");
+      }
+    } finally {
+      setInsightsLoading(false);
     }
   }
 
@@ -57,7 +115,7 @@ export default function PatientDashboard() {
         "http://localhost:5000/api/users/profile",
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       setProfile(data);
     } catch (err) {
@@ -68,6 +126,7 @@ export default function PatientDashboard() {
   useEffect(() => {
     fetchRecords();
     fetchProfile();
+    fetchInsights();
   }, []);
 
   async function handleDelete(id) {
@@ -92,8 +151,9 @@ export default function PatientDashboard() {
     const thisWeek = records.filter((r) => new Date(r.createdAt) >= weekAgo);
     const lastWeek = records.filter(
       (r) =>
-        new Date(r.createdAt) >= new Date(weekAgo.getTime() - 7 * 24 * 60 * 60 * 1000) &&
-        new Date(r.createdAt) < weekAgo
+        new Date(r.createdAt) >=
+          new Date(weekAgo.getTime() - 7 * 24 * 60 * 60 * 1000) &&
+        new Date(r.createdAt) < weekAgo,
     );
 
     // Calculate streak (consecutive days with records)
@@ -107,7 +167,7 @@ export default function PatientDashboard() {
     for (let date of sortedDates) {
       const recordDate = new Date(date);
       const diffDays = Math.floor(
-        (currentDate - recordDate) / (1000 * 60 * 60 * 24)
+        (currentDate - recordDate) / (1000 * 60 * 60 * 24),
       );
       if (diffDays === streak) {
         streak++;
@@ -142,7 +202,7 @@ export default function PatientDashboard() {
     // Water intake today
     const today = new Date().toDateString();
     const todayRecord = records.find(
-      (r) => new Date(r.date || r.createdAt).toDateString() === today
+      (r) => new Date(r.date || r.createdAt).toDateString() === today,
     );
     const waterToday = todayRecord?.waterIntake || 0;
     const waterGoal = 2.5;
@@ -170,7 +230,7 @@ export default function PatientDashboard() {
         <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-              Welcome back, {profile?.firstName || "there"}! 
+              Welcome back, {profile?.firstName || "there"}!
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Here's your health overview for today
@@ -197,9 +257,7 @@ export default function PatientDashboard() {
             label="Logging Streak"
             value={`${metrics?.streak || 0} Days`}
             subtitle={
-              metrics?.streak > 0
-                ? `Keep it going! 🔥`
-                : "Start tracking today"
+              metrics?.streak > 0 ? `Keep it going!` : "Start tracking today"
             }
             borderColor="border-orange-200 dark:border-orange-900/30"
           />
@@ -226,10 +284,10 @@ export default function PatientDashboard() {
             value={`${metrics?.avgMood || 0}/10`}
             subtitle={
               metrics?.avgMood >= 7
-                ? "Feeling great! 😊"
+                ? "Feeling great! "
                 : metrics?.avgMood >= 5
-                ? "Doing okay 😌"
-                : "Take care of yourself 💙"
+                  ? "Doing okay "
+                  : "Take care of yourself 💙"
             }
             borderColor="border-yellow-200 dark:border-yellow-900/30"
           />
@@ -244,12 +302,147 @@ export default function PatientDashboard() {
             subtitle="Daily intake"
             badge={
               metrics?.waterToday >= metrics?.waterGoal
-                ? "Goal reached! 💧"
+                ? "Goal reached!"
                 : `${(metrics?.waterGoal - metrics?.waterToday).toFixed(1)}L to go`
             }
             progress={metrics?.waterProgress || 0}
             borderColor="border-cyan-200 dark:border-cyan-900/30"
           />
+        </div>
+
+        {/* AI Health Insights (UNDER METRIC CARDS) */}
+        <div className="mb-8 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Brain className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                AI Health Insights for Today
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Small tips based on your latest check-in
+              </p>
+            </div>
+            
+            {/* Subtle refresh icon - only shows when there are insights */}
+            {insights?.tips?.length > 0 && !insightsLoading && (
+              <button
+                onClick={() => fetchInsights(true)}
+                disabled={insightsLoading}
+                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 
+                  hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group"
+                title="Refresh insights"
+              >
+                <RefreshCw className={`w-5 h-5 ${insightsLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`} />
+              </button>
+            )}
+          </div>
+
+          {/* Body */}
+          <div className="mt-5">
+            {insightsLoading ? (
+              <div className="grid gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="animate-pulse p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-gray-200 dark:bg-gray-800" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-32 bg-gray-200 dark:bg-gray-800 rounded" />
+                        <div className="h-3 w-full bg-gray-200 dark:bg-gray-800 rounded" />
+                        <div className="h-3 w-3/4 bg-gray-200 dark:bg-gray-800 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : insightsError ? (
+              <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10">
+                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                  <Brain className="w-4 h-4" />
+                  {insightsError}
+                </p>
+                <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                  {insightsError.includes("busy") 
+                    ? "Google's AI is experiencing high traffic. This is temporary - usually clears in 1-2 minutes."
+                    : "If the issue persists, please check your internet connection."
+                  }
+                </p>
+                <button
+                  onClick={fetchInsights}
+                  className="mt-3 px-4 py-2 rounded-xl text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white transition"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : !insights?.tips?.length ? (
+              <div className="p-6 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-950">
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                  No insights yet
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Add a wellness check-in to generate tips for today.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {insights.tips.slice(0, 3).map((t, idx) => {
+                  const type = (t.type || "").toLowerCase();
+
+                  const Icon =
+                    type === "hydration"
+                      ? Droplet
+                      : type === "meals"
+                        ? Utensils
+                        : type === "sleep"
+                          ? Moon
+                          : type === "activity"
+                            ? Activity
+                            : type === "stress"
+                              ? Heart
+                              : Brain;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 hover:shadow-md transition"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-bold text-gray-900 dark:text-white">
+                              {t.title || "Tip"}
+                            </p>
+                            {/* optional tiny tag */}
+                            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300">
+                              {type || "general"}
+                            </span>
+                          </div>
+
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">
+                            {t.text || "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Footer line */}
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Updated:{" "}
+                  {insights.updatedAt
+                    ? new Date(insights.updatedAt).toLocaleString()
+                    : "just now"}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Records Section */}
@@ -316,6 +509,8 @@ export default function PatientDashboard() {
             onCreated={(r) => {
               setRecords((prev) => [r, ...prev]);
               setOpen(false);
+              // Auto-refresh AI insights after adding new health data (force refresh to get new insights)
+              fetchInsights(true);
             }}
           />
         )}
@@ -429,8 +624,10 @@ function StatCard({ label, value, sub, icon }) {
 function SimpleView({ records, onDelete }) {
   if (!records.length)
     return (
-      <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 
-        border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-16 text-center">
+      <div
+        className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 
+        border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-16 text-center"
+      >
         <div className="flex flex-col items-center gap-4">
           <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
             <FileText className="w-10 h-10 text-white" />
@@ -440,7 +637,8 @@ function SimpleView({ records, onDelete }) {
               Start Your Health Journey
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
-              Track your daily wellness metrics like sleep, mood, water intake, and more.
+              Track your daily wellness metrics like sleep, mood, water intake,
+              and more.
               <br />
               Click{" "}
               <span className="font-bold text-blue-600 dark:text-blue-400">
@@ -481,7 +679,11 @@ function SimpleView({ records, onDelete }) {
                   })}
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  Health Check-in • {new Date(r.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                  Health Check-in •{" "}
+                  {new Date(r.createdAt).toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               </div>
             </div>
@@ -576,8 +778,10 @@ function MetricBadge({ icon, label, value, color }) {
 function GraphView({ records }) {
   if (!records.length)
     return (
-      <div className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 
-        border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-16 text-center">
+      <div
+        className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 
+        border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-16 text-center"
+      >
         <div className="flex flex-col items-center gap-4">
           <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
             <BarChart2 className="w-10 h-10 text-white" />
@@ -587,7 +791,8 @@ function GraphView({ records }) {
               Not enough data for charts
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
-              Log at least 3-5 health records to see beautiful charts and visualize your wellness trends over time.
+              Log at least 3-5 health records to see beautiful charts and
+              visualize your wellness trends over time.
             </p>
           </div>
         </div>

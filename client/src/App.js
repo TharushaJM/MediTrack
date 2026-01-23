@@ -43,6 +43,7 @@ function LayoutWrapper({ children }) {
     "/register/doctor",
     "/login",
     "/chat",
+    "/",
   ];
 
   const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);

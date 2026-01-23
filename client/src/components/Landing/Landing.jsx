@@ -141,10 +141,7 @@ export default function Landing() {
               transition={{ duration: 0.6 }}
               className="space-y-6"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-100 bg-blue-50 text-blue-700 text-xs font-semibold">
-                <ShieldCheck className="w-4 h-4" />
-                Secure health tracking for Patients & Doctors
-              </div>
+             
 
               <h1 className="text-4xl md:text-6xl font-extrabold leading-tight">
                 Track your health.
@@ -214,10 +211,7 @@ export default function Landing() {
                 wellness & care
               </span>
             </h2>
-            <p className="text-gray-600 mt-3">
-              Built around what your project actually does today — no fake
-              promises.
-            </p>
+            
           </div>
 
           {/* Patient Features */}
@@ -575,10 +569,11 @@ export default function Landing() {
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
             <div className="lg:col-span-2">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-black">
-                  M
-                </div>
-                <div className="text-xl font-extrabold">MediTrack</div>
+                 <img 
+              src="/medical.png" 
+              alt="MediTrack Logo" 
+              className="h-10 w-auto object-contain scale-150 origin-center"
+            />
               </div>
 
               <p className="mt-4 text-slate-400 leading-relaxed max-w-md">
